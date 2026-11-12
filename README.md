@@ -1,6 +1,6 @@
 # Canvas Lab · ADM1401 Introducción a la Empresa
 
-Laboratorio interactivo para aprender y aplicar el **Modelo Canvas** (Temas 9 y 10) con casos reales
+Laboratorio interactivo para aprender y aplicar el **Modelo Canvas** (Tema 10) con casos reales
 de la Península de Yucatán. Incluye tutorial paso a paso, ejemplo resuelto, encuesta, números,
 rúbrica y reporte para subir a **Brightspace → Actividad 10**.
 

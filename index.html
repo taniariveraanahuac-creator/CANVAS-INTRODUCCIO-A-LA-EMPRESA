@@ -308,7 +308,7 @@ ul.tight{margin:4px 0 10px;padding-left:20px}ul.tight li{margin:2px 0}
 </head>
 <body>
 <header class="top">
-  <div class="brand"><div class="logo">🐝</div><div><b>Canvas Lab · ADM1401</b><small>Introducción a la Empresa · Temas 9 y 10 · EIN Anáhuac Cancún</small></div></div>
+  <div class="brand"><div class="logo">🐝</div><div><b>Canvas Lab · ADM1401</b><small>Introducción a la Empresa · Tema 10 · EIN Anáhuac Cancún</small></div></div>
   <div class="who">
     <button class="pill light" id="whoBtn">👤 <span id="whoTxt">¿Quién eres?</span></button>
     <button class="pill light" id="tourBtn">🎓 Tutorial</button>
@@ -1369,7 +1369,7 @@ const FT={
  b2:{items:['Turistas nacionales que quieren probar algo típico','Familias locales que pasean de noche','Jóvenes universitarios (buscan precio accesible)'],just:'Elegimos a los turistas nacionales como segmento principal porque, según SEDETUR, son la mayoría de los visitantes que pasean por el centro.'},
  b3:{items:['Food truck en el malecón y en ferias','Instagram y TikTok para avisar la ubicación del día','Pedidos por WhatsApp para fiestas y eventos'],just:'Usamos redes porque el 80% de los encuestados jóvenes dijo que encuentra dónde comer en Instagram o TikTok.'},
  b4:{items:['Trato amable y foto con el camión','Tarjeta de lealtad: la 6.ª marquesita gratis','Responder todas las reseñas de Google'],just:'La tarjeta de lealtad busca que las familias locales regresen cada semana, porque ellas compran todo el año (no solo en temporada).'},
- b5:{items:['Venta por pieza: $70 con queso, $90 con Nutella','Paquetes para fiestas y eventos','Pago en efectivo, tarjeta y transferencia'],just:'Fijamos $70 porque la competencia cobra entre $60 y $85 y el 55% de la encuesta pagaría hasta $75.'},
+ b5:{items:['Venta por pieza: $70 con queso, $90 con Nutella','Paquetes para fiestas y eventos','Pago en efectivo, tarjeta y transferencia'],just:'Fijamos $70 porque la competencia cobra entre $60 y $85 y el 57% de nuestra encuesta (n = 30) pagaría entre $60 y $75.'},
  b6:{items:['🏠 Food truck equipado con 2 planchas','🧠 La receta de la abuela','👩‍🍳 Dos ayudantes capacitados','💰 $150,000 de ahorros para arrancar'],just:'El recurso más caro es el camión; el más difícil de copiar es la receta familiar.'},
  b7:{items:['Preparar la masa y los rellenos cada mañana','Atender y cobrar rápido','Publicar la ubicación del día en redes'],just:'La actividad clave es la rapidez: con 2 planchas podemos hacer 40 marquesitas por hora en la hora pico.'},
  b8:{items:['Proveedor de queso de bola y harina','Organizadores de ferias y eventos','Hotel que nos deja estacionarnos a cambio de un descuento para sus huéspedes'],just:'El hotel aliado nos da una ubicación con mucho tráfico sin pagar renta; él gana un beneficio para sus huéspedes.'},
@@ -1392,7 +1392,7 @@ let QZ={i:0,score:0,picked:null};
 function vInicio(){
   const n=nextStep(); const tm=ME.team&&teamById(ME.team);
   return `<section class="hero"><div class="bee">🐝</div>
-   <span class="tag" style="background:#ffffff22;color:#fff">ADM1401 · Temas 9 y 10 · Modelo de negocio</span>
+   <span class="tag" style="background:#ffffff22;color:#fff">ADM1401 · Tema 10 · Modelo de negocio</span>
    <h1>Aprende a usar el Modelo Canvas con una empresa real de la región</h1>
    <p>Sigue la ruta de 8 pasos. En cada paso hay instrucciones, ejemplos resueltos y la ayuda de <b>Kab</b>, la abeja coach. Todo se guarda solo.</p>
    <div class="row" style="margin-top:12px"><a class="btn or big" href="#${n.v}">👉 ${tm?'Continuar':'Empezar'}: ${n.ic} ${n.t}</a><a class="btn gh big" href="#ejemplo">👀 Ver ejemplo resuelto</a></div></section>
@@ -1457,7 +1457,7 @@ const WALK=[
  {ic:'📊',t:'Apliquen la encuesta',v:'encuesta',who:'Mercado coordina; todos encuestan',time:'1 semana (4 encuestas por persona)',
   doit:['Revisen el cuestionario que ya viene listo.','Cada integrante aplica 4 encuestas (meta: 20).','Capturen cada respuesta en “✍️ Capturar respuesta”.'],
   done:'El contador marca 20 de 20 y ven sus gráficas en “📈 Resultados”.',
-  ex:'30 respuestas en el malecón: 63% busca algo típico; 55% pagaría hasta $75.'},
+  ex:'30 encuestas en el malecón (18 en papel + 12 por Google Forms): 63% busca algo típico; 57% pagaría entre $60 y $75.'},
  {ic:'🧩',t:'Llenen los 9 bloques',v:'canvas',who:'Cada rol es dueño de sus bloques; todos opinan',time:'2 sesiones',
   doit:['Vayan del bloque 1 al 9.','En cada bloque: elijan propuestas (¡ojo con las trampas!), agreguen una idea propia y justifiquen con un dato.','Usen “➕ Usar en la justificación” para traer datos de su encuesta.'],
   done:'Los 9 círculos tienen ✓ y Kab dice “¡Bloque listo!”.',
@@ -1497,12 +1497,12 @@ function vEjemplo(){
   return `<div class="pagehead"><div><h1>👀 Ejemplo completo resuelto</h1><div class="muted">Así debe verse el reporte que suben a la Actividad 10 (caso inventado para aprender: food truck “Marquesitas Doña Lupe”).</div></div><a class="btn gh" href="#inicio">⬅️ Volver al inicio</a></div>
   <div class="callout c-warn"><span class="ic">⚠️</span><div>Este ejemplo es para entender el <b>formato y el nivel</b> esperados. Su equipo trabaja un <b>caso real distinto</b>: no copien, ¡inspírense!</div></div>
   <div class="rep">
-   <div class="rhead"><small>Universidad Anáhuac Cancún · EIN · ADM1401 Introducción a la Empresa · Temas 9 y 10 · Actividad 10</small><h1 style="color:#fff">Reporte de modelo de negocio · Marquesitas Doña Lupe (EJEMPLO)</h1><div>Equipo <b>1️⃣ Equipo 1</b> · Grupo Administración · Avance <b>100%</b></div></div>
+   <div class="rhead"><small>Universidad Anáhuac Cancún · EIN · ADM1401 Introducción a la Empresa · Tema 10 · Actividad 10</small><h1 style="color:#fff">Reporte de modelo de negocio · Marquesitas Doña Lupe (EJEMPLO)</h1><div>Equipo <b>1️⃣ Equipo 1</b> · Grupo Administración · Avance <b>100%</b></div></div>
    <h2>👥 Integrantes y roles</h2><table><tr><th>Integrante</th><th>Rol</th><th>Bloques a cargo</th></tr>
     <tr><td>Ana (ejemplo)</td><td>🧭 Coordinación</td><td>1</td></tr><tr><td>Luis (ejemplo)</td><td>🔎 Mercado</td><td>2, 3, 4</td></tr><tr><td>Sofía (ejemplo)</td><td>💰 Finanzas</td><td>5, 9</td></tr><tr><td>Raúl (ejemplo)</td><td>⚙️ Operaciones</td><td>6, 7, 8</td></tr><tr><td>Majo (ejemplo)</td><td>📝 Relatoría</td><td>Reporte</td></tr></table>
    <h2>🧩 Business Model Canvas</h2><div class="rgrid">${BLOCKS.map(b=>`<div class="rb" style="grid-column:${gridPos[b.k]};border-top-color:${b.hex}"><b>${b.n}. ${b.icon} ${esc(b.name)}</b><ul>${FT[b.k].items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}</div>
    <h2>📝 Justificación por bloque</h2>${BLOCKS.map(b=>`<p><b style="color:${b.hex}">${b.n}. ${b.icon} ${esc(b.name)}:</b> ${esc(FT[b.k].just)}</p>`).join('')}
-   <h2>📊 Encuesta del equipo (30 respuestas)</h2><table><tr><th>Pregunta</th><th>Bloque</th><th>Resultado principal</th></tr>${DEMO_SURVEY.map(r=>`<tr><td>${esc(r[0])}</td><td>${BMAP[r[4]].n}</td><td>${esc(r[1])}${r[2]!=null?`: ${r[2]}%`:''} (n = ${r[3]})</td></tr>`).join('')}</table>
+   <h2>📊 Encuesta del equipo (30 personas)</h2><p>Aplicada el 8 y 9 de noviembre en el malecón Tajamar y el Parque de las Palapas: 18 en papel y 12 por Google Forms.</p>${demoSurveyTable()}
    <h2>🧮 Números</h2><table><tr><th>Fuente</th><th>Precio</th><th>Costo var.</th><th>Margen</th><th>Unid./mes</th><th>Ingreso/mes</th></tr><tr><td>Marquesita</td><td>$70</td><td>$22</td><td>$48 (69%)</td><td>1,200</td><td>$84,000</td></tr></table>
    <div style="margin-top:6px"><span class="kpi">Ingresos/mes $84,000</span><span class="kpi">Costos fijos $24,000</span><span class="kpi">Utilidad/mes $33,600</span><span class="kpi">Punto de equilibrio 500 piezas/mes (≈ 17 al día)</span><span class="kpi">Inversión $150,000 · recuperación 4.5 meses</span></div>
    <p><b>Interpretación:</b> con 40 ventas diarias superamos por mucho el punto de equilibrio (17 al día). El mayor riesgo es la temporada de lluvias; por eso proponemos paquetes para fiestas, que no dependen del clima.</p>
@@ -1510,7 +1510,30 @@ function vEjemplo(){
    <h2>🎯 Conclusión: ¿por qué este modelo y no otro?</h2><p>Elegimos un food truck con afiliación a hoteles y no un local fijo porque la renta en la zona hotelera duplicaría nuestros costos fijos y nos obligaría a vender más de 35 marquesitas al día solo para no perder. El camión nos deja ir a donde está el cliente (malecón, ferias) y la encuesta muestra que el 80% de los jóvenes nos encontraría por redes. Los números confirman que el modelo deja $33,600 al mes y recupera la inversión en menos de 5 meses.</p>
    <h2>📏 Rúbrica (autoevaluación)</h2><table><tr><th>Criterio</th><th>Peso</th><th>Nivel</th></tr>${RUBRIC.map((r,i)=>`<tr><td>${esc(r.n)}</td><td>${r.w}</td><td>${i===1||i===5?'Bueno':'Excelente'}</td></tr>`).join('')}<tr><th colspan="2">Calificación</th><th>9.4</th></tr></table>
   </div>
+  ${demoSurveyHow()}
   <div class="card" style="margin-top:16px;border:3px solid var(--orange)"><h2>📤 Y al final: súbanlo a la Actividad 10</h2>${uploadSteps()}</div>`;
+}
+const DEMO_Q=[
+ {q:'¿Usted es…?',t:'Opción única',b:'b2',o:[['Turista nacional',17],['Residente de Cancún',9],['Turista internacional',4]]},
+ {q:'¿Qué busca al comprar un postre en la calle?',t:'Opción única',b:'b1',o:[['Probar algo típico',19],['Precio bajo',6],['Que sea rápido',5]]},
+ {q:'¿Cuánto pagaría por una marquesita?',t:'Opción única',b:'b5',o:[['Menos de $60',6],['$60 a $75',17],['Más de $75',7]]},
+ {q:'¿Dónde se entera de dónde comer?',t:'Varias opciones',b:'b3',o:[['Instagram o TikTok',24],['Recomendación de alguien',12],['Google Maps',10]]},
+ {q:'Del 1 al 5, ¿volvería si tuviera tarjeta de lealtad?',t:'Escala 1 a 5',b:'b4',o:[['1',0],['2',1],['3',4],['4',9],['5',16]],avg:'4.3'},
+ {q:'¿Qué le gustaría que tuviera el food truck?',t:'Abierta',b:'b1',open:['Más sabores dulces','Mesas para sentarse','Que acepte tarjeta','Combo con bebida']}
+];
+function demoSurveyTable(){return `<table><tr><th>Pregunta</th><th>Bloque</th><th>Resultados (n = 30)</th></tr>${DEMO_Q.map(q=>{let r;if(q.open)r=q.open.map(esc).join(' · ');else{const mx=Math.max(...q.o.map(x=>x[1]));r=q.o.map(([o,c])=>{const t=`${esc(o)}: ${Math.round(c/30*100)}% (${c})`;return c===mx?`<b>${t}</b>`:t}).join(' · ')+(q.avg?` · <b>Promedio ${q.avg} / 5</b>`:'')+(q.t==='Varias opciones'?' <i>(varias opciones: suma más de 100%)</i>':'');}return `<tr><td>${esc(q.q)}</td><td>${BMAP[q.b].n}</td><td>${r}</td></tr>`}).join('')}</table>`;}
+function demoSurveyHow(){
+  const step=(n,ic,t,html)=>`<div class="wk"><div class="wkn">${n}</div><div class="wkb"><h3 style="margin:0 0 6px">${ic} ${t}</h3>${html}</div></div>`;
+  return `<div class="card" style="margin-top:16px;border:3px solid #2563eb"><h2 style="margin-top:0">📊 Así hicimos y aplicamos la encuesta, paso a paso</h2><p class="muted">Ejemplo de Doña Lupe. Su equipo hará lo mismo con el cuestionario de su caso real (pestaña 📊 Encuesta).</p><div class="walk">
+  ${step(1,'🎯','¿Para qué la hicimos? (objetivo)',`<p>Para comprobar con datos <b>a quién</b> venderle (bloque 2), <b>qué valoran</b> (bloque 1), <b>dónde se enteran</b> (bloque 3), <b>cuánto pagarían</b> (bloque 5) y <b>si volverían</b> (bloque 4).</p><div class="wkex">💡 Regla: cada pregunta debe alimentar un bloque del Canvas. Si una pregunta no sirve para ningún bloque, se quita.</div>`)}
+  ${step(2,'👥','¿A quién le preguntamos?',`<p>A <b>nuestro segmento</b>: personas mayores de 18 años que pasean por el malecón Tajamar y el Parque de las Palapas (turistas y locales). <b>No</b> a amigos ni familiares: ellos nos dirían lo que queremos oír.</p>`)}
+  ${step(3,'🔢','¿A cuántas?',`<p>Meta: <b>30 personas</b> (mínimo 20). Fueron <b>6 encuestas por integrante</b>.</p>`)}
+  ${step(4,'📝','El cuestionario',`<p>6 preguntas cortas (3 minutos). Así quedaron:</p><ol class="tight">${DEMO_Q.map(q=>`<li><b>${esc(q.q)}</b> <span class="tag">${q.t} · bloque ${BMAP[q.b].n}</span>${q.open?'':`<br><span class="muted">${q.o.map(x=>esc(x[0])).join(' · ')}</span>`}</li>`).join('')}</ol><div class="grid g2" style="margin-top:8px"><div class="wkdone">✅ Preguntas neutras, con opciones claras y rangos de precio.</div><div class="callout c-bad" style="margin:0;padding:8px 10px"><div>❌ Evitamos: “¿Verdad que te encantaría nuestra marquesita?” (empuja la respuesta).</div></div></div>`)}
+  ${step(5,'📍','¿Cómo y cuándo la aplicamos?',`<ul class="tight"><li><b>Sábado 8 de noviembre, 5 a 8 p. m.</b> y <b>domingo 9, 6 a 8 p. m.</b>, cuando hay más gente paseando.</li><li><b>En papel:</b> imprimimos el cuestionario con <b>⬇️ Descargar para imprimir</b> y lo leímos a cada persona (18 encuestas).</li><li><b>En celular:</b> copiamos el cuestionario con <b>📋 Copiar</b> a Google Forms y mostramos un código QR (12 encuestas).</li><li>Siempre dijimos: <i>“Somos estudiantes de la Anáhuac, es un trabajo escolar, es anónima y toma 3 minutos. ¿Nos ayudas?”</i></li><li><b>Nunca</b> pedimos nombre, teléfono ni correo.</li></ul>`)}
+  ${step(6,'📥','¿Cómo metimos los resultados?',`<ul class="tight"><li><b>Las 12 de Google Forms:</b> Respuestas → ⋮ → Descargar respuestas (.csv) → en la página, <b>📥 Insertar resultados → Opción A</b>, subimos el archivo.</li><li><b>Las 18 en papel:</b> contamos cuántas personas eligieron cada opción → <b>Opción B · Totales</b> (por ejemplo, “Probar algo típico”: 11).</li><li>El contador quedó en <b>30 de 30</b>.</li></ul>`)}
+  ${step(7,'📈','¿Qué encontramos?',`${demoSurveyTable()}<p style="margin-top:8px"><b>En palabras simples:</b> casi 6 de cada 10 son turistas nacionales; buscan probar algo típico; la mayoría pagaría entre $60 y $75; se enteran por redes; y volverían con una tarjeta de lealtad.</p>`)}
+  ${step(8,'🧩','¿Cómo lo usamos en el Canvas?',`<p>En <b>📈 Resultados</b> tocamos <b>“➕ Usar en la justificación”</b> y luego lo redactamos mejor:</p><ul class="tight"><li><b>Bloque 2:</b> “Elegimos a los turistas nacionales porque son el 57% de nuestra encuesta (n = 30).”</li><li><b>Bloque 5:</b> “Fijamos $70 porque el 57% pagaría entre $60 y $75.”</li><li><b>Bloque 3:</b> “Usamos Instagram y TikTok porque el 80% se entera ahí de dónde comer.”</li><li><b>Bloque 4:</b> “La tarjeta de lealtad tiene sentido: la calificaron con 4.3 de 5.”</li></ul>`)}
+  </div></div>`;
 }
 function uploadSteps(){
   return `<ol class="steps"><li>En <a href="#reporte">📄 Reporte</a> toquen <b>💾 Guardar versión</b> y nómbrenla <b>“Entrega final”</b>.</li><li>Toquen <b>⬇️ Descargar reporte</b> y abran el archivo descargado.</li><li>Presionen <b>Ctrl + P</b> (en Mac: <b>Cmd + P</b>) → <b>Guardar como PDF</b>.</li><li>Nombren el archivo así: <b>ADM1401_Act10_Equipo#_Grupo.pdf</b>.</li><li>Entren a <b>Brightspace → Actividad 10</b> y suban el PDF (lo sube Relatoría; todos lo revisan antes).</li></ol>`;
@@ -1761,6 +1784,7 @@ function vEncuesta(){
   if(SVTAB==='lista') body=R.length?`<div style="overflow-x:auto"><table><tr><th>#</th><th>Fecha</th><th>Capturó</th><th>Lugar</th><th></th></tr>${R.map((r,i)=>`<tr><td>${i+1}</td><td>${fmtDT(r.ts)}</td><td>${esc(r.by||'')}</td><td>${esc(r.place||'')}</td><td>${(isTeacher()||r.by===ME.name)?`<button class="btn gh sm" data-rdel="${r._k}">🗑️</button>`:''}</td></tr>`).join('')}</table></div>`:'<p class="muted">Sin respuestas todavía.</p>';
   return `<div class="pagehead"><div><h1>📊 Encuesta del equipo</h1><div class="muted">Datos propios para justificar su Canvas</div></div></div>
   ${howTo(['Revisen el cuestionario y descárguenlo o cópienlo (papel, Google Forms o Excel).','Apliquen mínimo '+goal+' encuestas y metan los resultados: una por una o en 📥 Insertar resultados.','En 📈 Resultados descarguen sus gráficas en CSV y toquen “➕ Usar en la justificación”.'])}
+  <div class="callout c-bee"><span class="ic">👀</span><div>¿No saben por dónde empezar? Miren <a href="#ejemplo">cómo hizo y aplicó su encuesta el equipo del ejemplo</a>, paso a paso.</div></div>
   ${helpBox('Encuesta para dummies: ¿cómo la aplicamos?',`<ol class="steps"><li><b>Revisen el cuestionario</b>: ya viene adaptado a su caso; pueden mejorarlo.</li><li><b>¿A quién encuestar?</b> A su segmento: ${esc(C.survey.target)}.</li><li><b>Meta:</b> mínimo ${goal} respuestas (por ejemplo, 4 por integrante).</li><li><b>Apliquen</b> en persona (lean y capturen aquí) o copien el cuestionario a Google Forms y luego capturen los resultados.</li><li><b>Analicen</b> en 📈 Resultados y toquen “➕ Usar en la justificación” para llevar el dato al Canvas.</li></ol><div class="callout c-warn"><span class="ic">🤝</span><div><b>Ética:</b> pidan permiso, expliquen que es un trabajo escolar y <b>no pidan nombre, teléfono, correo ni datos personales</b>. La participación es voluntaria.</div></div>`)}
   <div class="card"><div class="row" style="justify-content:space-between"><div class="row"><div class="ring" style="--p:${pc}"><span>${NT}</span></div><div><b>${NT} de ${goal} respuestas</b>${sv.manualN?` <span class="tag">${R.length} capturadas + ${sv.manualN} en papel</span>`:''}<br><span class="muted">Caso: ${esc(C.full)}</span></div></div><div class="row"><label class="f" style="margin:0">Meta</label><input type="number" id="svGoal" min="5" value="${goal}" style="width:90px"></div></div></div>
   <div class="ptabs" style="--c:var(--navy)">${tabs.map(([k,l])=>`<button data-svtab="${k}" class="${SVTAB===k?'on':''}">${l}</button>`).join('')}</div>
@@ -2023,7 +2047,7 @@ function reportBody(tid,snap,meta){
   const g1=se?gradeOf(se):null, g2=gr?gradeOf(gr.levels):null;
   const t=T(tid);
   return `<div class="rep">
-   <div class="rhead"><small>Universidad Anáhuac Cancún · Escuela Internacional de Negocios · ADM1401 Introducción a la Empresa · Temas 9 y 10 · Actividad 10</small><h1 style="color:#fff">Reporte de modelo de negocio · ${esc(CASES[caseIdOf(tid)].full)}</h1><div>Equipo <b>${esc(tm.emoji+' '+tm.name)}</b> · ${esc(g.name)} · Avance <b>${prog}%</b> · ${meta&&meta.ts?'Versión del '+fmtDT(meta.ts):'Generado el '+fmtDT(Date.now())}</div></div>
+   <div class="rhead"><small>Universidad Anáhuac Cancún · Escuela Internacional de Negocios · ADM1401 Introducción a la Empresa · Tema 10 · Actividad 10</small><h1 style="color:#fff">Reporte de modelo de negocio · ${esc(CASES[caseIdOf(tid)].full)}</h1><div>Equipo <b>${esc(tm.emoji+' '+tm.name)}</b> · ${esc(g.name)} · Avance <b>${prog}%</b> · ${meta&&meta.ts?'Versión del '+fmtDT(meta.ts):'Generado el '+fmtDT(Date.now())}</div></div>
    <h2>👥 Integrantes y roles</h2><table><tr><th>Integrante</th><th>Rol</th><th>Bloques a cargo</th></tr>${members.map(m=>`<tr><td>${esc(m)}</td><td>${esc(roles[m]||'—')}</td><td>${BLOCKS.filter(b=>B[b.k]&&B[b.k].owner===m).map(b=>b.n).join(', ')||'—'}</td></tr>`).join('')}</table>
    <h2>🧩 Business Model Canvas</h2><div class="rgrid">${BLOCKS.map(b=>`<div class="rb" style="grid-column:${gridPos[b.k]};border-top-color:${b.hex}"><b>${b.n}. ${b.icon} ${esc(b.name)}</b><ul>${(B[b.k]?.items||[]).map(i=>`<li>${esc(i.t)}</li>`).join('')||'<li style="color:#9aa0b8">(vacío)</li>'}</ul></div>`).join('')}</div>
    <h2>📝 Detalle y justificación por bloque</h2>${BLOCKS.map(b=>{const d=B[b.k]||{};return `<h3 style="color:${b.hex};margin-bottom:2px">${b.n}. ${b.icon} ${esc(b.name)} <span class="src">${sc(b.k)}%</span></h3><div style="font-size:.85rem;color:#5d6480">Responsable: ${esc(d.owner||'—')}</div><ul>${(d.items||[]).map(i=>`<li>${esc(i.t)}<span class="src">${i.src==='prop'?'propuesta':'idea propia'}</span></li>`).join('')||'<li>(sin elementos)</li>'}</ul><p><b>Justificación:</b> ${esc(d.just||'—')}</p>`}).join('')}
