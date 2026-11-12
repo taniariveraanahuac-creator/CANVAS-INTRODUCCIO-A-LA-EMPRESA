@@ -22,9 +22,13 @@ Liga: https://taniariveraanahuac-creator.github.io/CANVAS-INTRODUCCIO-A-LA-EMPRE
 4. Autoriza los permisos y copia la **URL de la aplicación web** (termina en `/exec`).
 5. Pega esa URL en `sync.json`: `{ "url": "https://script.google.com/macros/s/…/exec" }`.
 
+## Equipos y claves
+Cada equipo entra con su clave (la docente las entrega por separado), registra a sus integrantes
+(máximo 5) y ya tiene un caso asignado por defecto. Las claves se guardan cifradas (hash) en `index.html`.
+
 ## Panel docente
 Pestaña 🍎 Docente. La clave está guardada cifrada (hash) en `index.html`.
 
 ## Notas
-- El repositorio es público: `index.html` contiene la lista de nombres de los alumnos.
+- La página ya no incluye la lista de alumnos: cada quien se registra con su nombre.
 - La Hoja de Google es tuya; en ella puedes ver y respaldar todos los datos.

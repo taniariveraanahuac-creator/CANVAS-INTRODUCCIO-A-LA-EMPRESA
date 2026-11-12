@@ -335,8 +335,8 @@ const DEFAULT_SESSIONS=()=>[
 const DEFAULT_CONFIG=()=>normalizeConfig({
   version:1,
   groups:[
-    {id:'L',name:'Grupo Liderazgo',horario:'',sessions:DEFAULT_SESSIONS(),pool:["Andrea Isabel Velasco Ancona", "Arianna Isabella Ortega Colmenares", "Ariannys Valentina Morales Fernández", "Carlos Joaquín Castillo Palma", "Daniel González Varillas", "Héctor Chevez Rodríguez", "Ingrid Ixchel Coba Cob", "Irán Dzul Trinidad", "Joaquín Estuardo Pérez Ribadeneira", "Luis Ángel Salas Palacios", "Mario Yael Esquivel Jácome", "Pau Gratacós Gallegos", "Renata Fernández González", "Sofía Ximena Álvarez García", "Victoria Carolina Rodríguez Cardoso", "Yardley Saint García Navarrete"]},
-    {id:'A',name:'Grupo Administración',horario:'',sessions:DEFAULT_SESSIONS(),pool:["Anuar Tame Caram", "Camila Tapia Campos", "Camila Yamilet Tec Guerrero", "Camilo Gabriel Neira Bone", "Daniella Valentina Rivera", "Emiliano Fuentes Camacho", "Emiliano Treviño Martínez", "Frida Sofía Barrera Reyes", "Jorge Ruiz Pelagio", "José René Escobar Ramos", "Juan Antonio Gorocica Burelos", "Lenny Antonio Vigueras Morales", "Luis Diego González Ulloa", "Mario Patricio Gascón García Marín", "Mauricio Charbel Casarrubias Martínez", "Maximiliano Sarabia Sánchez", "Maya Willis Salvatierra", "Samantha Flores González", "Santiago Ruiz Mendoza", "Scott Allen Alcocer Hanson", "Sebastián David Amador Quiroz", "Vasti Sarai Santos Rojas"]}
+    {id:'L',name:'Grupo Liderazgo',horario:'',sessions:DEFAULT_SESSIONS(),pool:[]},
+    {id:'A',name:'Grupo Administración',horario:'',sessions:DEFAULT_SESSIONS(),pool:[]}
   ],
   teams:[
     {id:'L1',group:'L',name:'Equipo 1',emoji:'1️⃣',members:[]},
@@ -351,7 +351,7 @@ const DEFAULT_CONFIG=()=>normalizeConfig({
   ],
   updatedAt:0
 });
-function normalizeConfig(c){ c.settings=Object.assign({selfJoin:true,maxTeam:5},c.settings||{}); (c.groups||[]).forEach(g=>{g.pool=g.pool||[];g.sessions=g.sessions||[];}); (c.teams||[]).forEach(t=>{ if(!t.caseId) t.caseId=(typeof DEFAULT_CASE!=='undefined'&&DEFAULT_CASE[t.id])||'pamasur'; t.members=t.members||[]; t.emoji=t.emoji||'⭐'; }); return c; }
+function normalizeConfig(c){ c.settings=Object.assign({selfJoin:false,maxTeam:5},c.settings||{}); (c.groups||[]).forEach(g=>{g.pool=g.pool||[];g.sessions=g.sessions||[];}); (c.teams||[]).forEach(t=>{ if(!t.caseId) t.caseId=(typeof DEFAULT_CASE!=='undefined'&&DEFAULT_CASE[t.id])||'pamasur'; t.members=t.members||[]; t.emoji=t.emoji||'⭐'; }); return c; }
 
 /* ---------- Los 9 bloques ---------- */
 const BLOCKS=[
@@ -745,7 +745,7 @@ const CASES={
  }
 };
 const CASE_ORDER=['pamasur','chicza','sargablock','siankaan','xunaan'];
-const DEFAULT_CASE={L1:'pamasur',L2:'elyucateco',L3:'miel',L4:'pucte',A1:'pamasur',A2:'salsol',A3:'keken',A4:'miel',A5:'elyucateco'};
+const DEFAULT_CASE={L1:'pamasur',L2:'elyucateco',L3:'salsol',L4:'miel',A1:'pamasur',A2:'keken',A3:'pucte',A4:'salsol',A5:'elyucateco'};
 /* ---------- 5 CASOS AGROINDUSTRIALES PARECIDOS A PAMASUR ---------- */
 Object.assign(CASES,{
  elyucateco:{id:'elyucateco',name:'El Yucateco',full:'El Yucateco · Salsas de chile habanero',emoji:'🌶️',real:true,place:'Kanasín (Mérida), Yucatán',sector:'Agroindustria / alimentos procesados',color:'#c2410c',
@@ -1096,10 +1096,10 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 /* =========================================================
    ESTADO + GUARDADO (nube cuando existe, siempre en el dispositivo)
    ========================================================= */
-const LS='canvaslab-adm1401-v2', LS_ME='canvaslab-adm1401-me', LS_TOUR='canvaslab-adm1401-tour';
+const LS='canvaslab-adm1401-v3', LS_ME='canvaslab-adm1401-me3', LS_TOUR='canvaslab-adm1401-tour';
 function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
-let S=lsGet(LS)||(()=>{const o=lsGet('canvaslab-adm1401-v1');return o?{config:DEFAULT_CONFIG(),teams:o.teams||{},grades:o.grades||{}}:null})()||{config:DEFAULT_CONFIG(),teams:{},grades:{}};
+let S=lsGet(LS)||{config:DEFAULT_CONFIG(),teams:{},grades:{}};
 if(!S.config||!S.config.teams) S.config=DEFAULT_CONFIG();
 S.teams=S.teams||{}; S.grades=S.grades||{}; normalizeConfig(S.config);
 let ME=lsGet(LS_ME)||{team:null,name:null};
@@ -1298,7 +1298,7 @@ function render(){
   if(ME.team&&!teamById(ME.team)){ME.team=null;lsSet(LS_ME,ME);}
   if(isStudentMe()){const real=teamOfName(ME.name);const rid=real?real.id:null;if(rid!==ME.team){ME.team=rid;lsSet(LS_ME,ME);if(rid)subscribeTeam(rid);}}
   const tm=ME.team&&teamById(ME.team);
-  $('#whoTxt').textContent=tm?`${ME.name?ME.name.split(' ')[0]:'Invitado'} · ${tm.emoji} ${tm.name}`:(ME.name?`${ME.name.split(' ')[0]} · sin equipo`:'¿Quién eres?');
+  $('#whoTxt').textContent=tm?`${ME.name?ME.name.split(' ')[0]:'Invitado'} · ${tm.emoji} ${tm.name}`:'🔑 Entrar con la clave de mi equipo';
   const mm=$('#main'); mm.onclick=mm.oninput=mm.onchange=null;
   $('#tabs').innerHTML=navHTML();
   mm.innerHTML=VIEWS[VIEW]()+nextBar();
@@ -1316,14 +1316,14 @@ function softRender(kind){
 const after={};
 
 function needTeam(){
-  if(ME.name&&!ME.team) return `<div class="card" style="text-align:center"><div style="font-size:54px">🆕</div><h2>Todavía no tienes equipo</h2><p class="muted">Únete a un equipo de tu grupo o creen uno nuevo.</p><a class="btn or" href="#equipos">👥 Ir a Equipos</a></div>`;
-  return `<div class="card" style="text-align:center"><div style="font-size:54px">👥</div><h2>Primero dinos quién eres</h2><p class="muted">Elige tu grupo, tu equipo y tu nombre para guardar el trabajo de tu equipo.</p><button class="btn or" onclick="openWho()">Elegir mi equipo</button></div>`;
+  return `<div class="card" style="text-align:center"><div style="font-size:54px">🔑</div><h2>Primero entra con la clave de tu equipo</h2><p class="muted">Tu profesora te da la clave de tu equipo. Si es tu primera vez, te registras con tu nombre.</p><button class="btn or big" onclick="openWho()">🔑 Escribir clave</button></div>`;
 }
+
 function helpBox(title,html){ return `<details class="card c-dummy" style="border-radius:16px"><summary style="cursor:pointer;font-weight:800">🧠 ${title}</summary><div style="margin-top:8px">${html}</div></details>`; }
 
 /* ---------- RUTA, NAVEGACIÓN Y APRENDE ---------- */
 const STEPS=[
- {v:'equipos',t:'Mi equipo',ic:'👥',d:'Únete a un equipo de 5 y repartan roles.'},
+ {v:'equipos',t:'Mi equipo',ic:'👥',d:'Entren con la clave del equipo, regístrense y repartan roles.'},
  {v:'aprende',t:'Aprende',ic:'🎓',d:'10 minutos: qué es el Canvas, un ejemplo resuelto y un mini-juego.'},
  {v:'caso',t:'El caso',ic:'📖',d:'Lean su caso real y abran las ligas de consulta.'},
  {v:'encuesta',t:'Encuesta',ic:'📊',d:'Apliquen mínimo 20 encuestas y capturen las respuestas.'},
@@ -1335,7 +1335,7 @@ const STEPS=[
 const EXTRA=[{v:'rubrica',t:'Rúbrica',ic:'📏'},{v:'calendario',t:'Calendario',ic:'📅'},{v:'docente',t:'Docente',ic:'🍎'}];
 function stepDone(v){
   const tid=ME.team; const t=tid?T(tid):null;
-  if(v==='equipos') return !!tid;
+  if(v==='equipos') return !!tid&&!!teamById(tid)&&teamById(tid).members.length>0;
   if(v==='aprende') return (lsGet('canvaslab-quiz')||0)>=7;
   if(!tid) return false;
   if(v==='caso') return !!lsGet('canvaslab-seen-caso-'+tid);
@@ -1441,8 +1441,8 @@ after.aprende=()=>{
 /* ---------- TUTORIAL DE PRINCIPIO A FIN + EJEMPLO RESUELTO ---------- */
 const WALK=[
  {ic:'👥',t:'Formen su equipo',v:'equipos',who:'Todos',time:'10 min',
-  doit:['Cada quien toca “¿Quién eres?”, elige su grupo y su nombre.','Se unen al mismo equipo (máximo 5).','Repartan roles: Coordinación, Mercado, Finanzas, Operaciones y Relatoría.'],
-  done:'Los 5 aparecen en el mismo equipo y cada uno tiene rol.',
+  doit:['Toquen “🔑 Entrar con la clave de mi equipo” y escriban la clave que les dio su profesora.','La primera vez, cada integrante registra su nombre completo (máximo 5).','Repartan roles: Coordinación, Mercado, Finanzas, Operaciones y Relatoría.'],
+  done:'Los integrantes aparecen registrados y cada uno tiene rol. Ya tienen su caso asignado.',
   ex:'Equipo 1: Ana (Coordinación), Luis (Mercado), Sofía (Finanzas), Raúl (Operaciones), Majo (Relatoría).'},
  {ic:'🎓',t:'Aprendan el Canvas',v:'aprende',who:'Todos',time:'15 min',
   doit:['Lean las 5 lecciones de “Aprende”.','Revisen el ejemplo del food truck.','Jueguen “¿En qué bloque va?” hasta sacar 7 de 10.'],
@@ -1864,73 +1864,45 @@ after.patron=()=>{
   };
 };
 
-/* ---------- EQUIPOS ---------- */
+/* ---------- EQUIPOS CON CLAVE ---------- */
+const TEAM_KEY_HASH={"L1":"1b8e0bf6e3bdedc5ade8edb378d5b2a35e4aec23cf285aadf56cad2a68b8337c","L2":"e4f7ba30e4ce50aa7a17c3df5f087e2bda0be74c41fef17ad55f738180f5d740","L3":"e31de0f52cb85915def2aef2a33678a3c2db3279b511c5178d23b1c728d9464a","L4":"7c51a6a3e4533fb0f9eb327e765896cd6007a35fdd6b7fffd3e7cd5595be23dd","A1":"609a4ce3441eed442e0716d7ce3a4ac296aaa9d5b9c1d3b27c3da5bd0f9cac32","A2":"1eb1c06dff3dc4d3b1cf5ef6b17a687488c6fa4288a736a25d9d8c5931d246b6","A3":"a0c0ae37aa79423b9902df7f68c5f779bc0aee3fc281d6122bfc3e0a4bb40459","A4":"7a8f1ba007d9a96dd7cf292b2bea379c30961571806f04a4247172a9be62f1a4","A5":"843e69c139ec353de74a932c99c552ac560fd6715aac5820d9fe14a8e809ab4e"};
 const TEAM_EMOJIS=['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
 function teamOfName(n){return S.config.teams.find(t=>t.members.includes(n))}
-function groupOfName(n){const t=teamOfName(n); if(t) return t.group; const g=S.config.groups.find(g=>(g.pool||[]).includes(n)); return g?g.id:null;}
-function namesOfGroup(gid){const g=groupById(gid); return [...S.config.teams.filter(t=>t.group===gid).flatMap(t=>t.members),...((g&&g.pool)||[])].sort((a,b)=>a.localeCompare(b,'es'));}
+function groupOfName(n){const t=teamOfName(n);return t?t.group:null}
 function isStudentMe(){return ME.name&&!['Invitado','Docente'].includes(ME.name)}
-function joinTeam(name,tid){ const to=teamById(tid); S.config.teams.forEach(t=>t.members=t.members.filter(m=>m!==name)); S.config.groups.forEach(g=>g.pool=(g.pool||[]).filter(m=>m!==name)); to.members.push(name); saveConfig(); addLog(tid,`🙋 ${name} se integró al equipo`); }
-function canJoin(t){const st=S.config.settings; return st.selfJoin && t.members.length<st.maxTeam;}
+function teamLabel(t){return `${t.emoji} ${t.name} · ${(groupById(t.group)||{}).name||''}`}
+async function teamByKey(k){const h=await sha256hex(String(k||'').trim().toUpperCase());return S.config.teams.find(t=>TEAM_KEY_HASH[t.id]===h)||null}
+function registerMember(tid,name){const t=teamById(tid);name=name.trim().replace(/\s+/g,' ');if(name.length<5)return 'Escribe tu nombre completo';if(S.config.teams.some(x=>x.members.some(m=>m.toLowerCase()===name.toLowerCase())))return 'Ese nombre ya está registrado';if(t.members.length>=S.config.settings.maxTeam)return `El equipo ya tiene ${S.config.settings.maxTeam} integrantes`;t.members.push(name);saveConfig();addLog(tid,`📝 Se registró ${name}`);return ''}
 function vEquipos(){
-  const tch=isTeacher(), st=S.config.settings, myG=isStudentMe()?groupOfName(ME.name):null;
-  return `<div class="pagehead"><div><h1>👥 Mi equipo</h1><div class="muted">Equipos numerados de máximo ${st.maxTeam} integrantes</div></div></div>
-  ${howTo(['Toca “¿Quién eres?” arriba y elige tu nombre.','Únete a un equipo con lugar (🙋) o crea uno nuevo.','Repartan roles: cada quien es dueño de unos bloques.'])}
-  ${helpBox('¿Cómo se forman los equipos?',`<ul><li>${st.selfJoin?`<b>Formación libre activada:</b> cada quien puede <b>🙋 unirse</b> a un equipo de su grupo (máximo ${st.maxTeam} integrantes) o <b>crear uno nuevo</b>.`:'La docente asignó los equipos. Si necesitas cambiarte, pídeselo a ella.'}</li><li>Cada equipo elige un <b>caso real</b> (📖 El caso) y reparte <b>roles</b>.</li><li>¿Llegó alguien nuevo? Usen <b>“➕ Integrar estudiante”</b>.</li><li>Si te cambias de equipo, el trabajo se queda con el equipo, no con la persona.</li></ul>`)}
-  ${isStudentMe()?`<div class="callout c-tip"><span class="ic">👤</span><div>Eres <b>${esc(ME.name)}</b> · ${ME.team&&teamById(ME.team)&&teamById(ME.team).members.includes(ME.name)?`equipo <b>${esc(teamById(ME.team).emoji+' '+teamById(ME.team).name)}</b>`:'<b>todavía sin equipo</b>: elige uno abajo 👇'}</div></div>`:''}
+  const tch=isTeacher(), st=S.config.settings, my=ME.team&&teamById(ME.team);
+  return `<div class="pagehead"><div><h1>👥 Mi equipo</h1><div class="muted">Cada equipo entra con su clave y registra a sus integrantes (máximo ${st.maxTeam}).</div></div></div>
+  ${howTo(['Toca “🔑 Entrar con la clave de mi equipo” (arriba) y escribe la clave que te dio tu profesora.','Si es la primera vez, registra tu nombre completo.','Repartan roles: cada quien es dueño de unos bloques.'])}
+  ${my?`<div class="card team" style="--tc:${CASES[my.caseId].color};border-top:8px solid ${CASES[my.caseId].color}">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(teamLabel(my))}</h2><span class="tag" style="font-size:.95rem">${CASES[my.caseId].emoji} Caso: ${esc(CASES[my.caseId].full)}</span></div>
+    <h3 style="margin-top:14px">📝 Integrantes registrados (${my.members.length}/${st.maxTeam})</h3>
+    ${my.members.length?my.members.map(m=>{const roles=(T(my.id).blocks.meta||{}).roles||{};return `<div class="member" style="padding:8px 0"><span style="font-size:1.05rem">${m===ME.name?'👤 ':''}<b>${esc(m)}</b></span><select data-role="${esc(m)}" style="width:auto;min-width:260px">${['',...ROLES].map(r=>`<option ${roles[m]===r?'selected':''} value="${esc(r)}">${r||'— elegir rol —'}</option>`).join('')}</select></div>`}).join(''):'<p class="muted">Aún no hay integrantes. ¡Registra tu nombre abajo!</p>'}
+    ${my.members.length<st.maxTeam?`<div class="row" style="margin-top:12px;flex-wrap:nowrap"><input type="text" id="regName" placeholder="Nombre completo del integrante"><button class="btn or" id="regAdd">📝 Registrar</button></div>`:'<p class="tag" style="margin-top:10px">Equipo completo ✔️</p>'}
+    <div class="callout c-tip" style="margin-top:14px"><span class="ic">📖</span><div>Su caso asignado es <b>${esc(CASES[my.caseId].full)}</b>. Lo pueden revisar en <a href="#caso">📖 El caso</a>.</div></div>
+   </div>`:`<div class="card" style="text-align:center"><div style="font-size:54px">🔑</div><h2>Entra con la clave de tu equipo</h2><p class="muted">Tu profesora te da la clave (por ejemplo, LID1-XXXX o ADM1-XXXX).</p><button class="btn or big" onclick="openWho()">🔑 Escribir clave</button></div>`}
   <div class="card"><h2>🎭 Roles sugeridos</h2><div class="grid g3">${ROLES.map(r=>`<div class="callout c-dummy" style="margin:0"><div>${esc(r)}</div></div>`).join('')}</div></div>
-  ${S.config.groups.map(g=>{const teams=S.config.teams.filter(t=>t.group===g.id);const n=teams.reduce((a,t)=>a+t.members.length,0)+(g.pool||[]).length;return `<h2 style="margin-top:22px">${esc(g.name)} <span class="tag">${n} estudiantes · ${teams.length} equipos</span></h2>
-   ${(g.pool||[]).length?`<div class="card c-warn" style="border:2px dashed #fbc78d"><b>🆕 Sin equipo todavía (${g.pool.length}):</b> ${g.pool.map(esc).join(' · ')}</div>`:''}
-   <div class="grid g3">${teams.map(t=>teamCard(t,tch,myG)).join('')}</div>`}).join('')}
-  ${(st.selfJoin||tch)?`<div class="card" style="margin-top:16px"><h2>🆕 Crear un equipo nuevo</h2><p class="muted">Se numera solo (por ejemplo, “Equipo 6”). Solo elijan grupo y caso.</p><div class="grid g2">
-   <div><label class="f">Grupo</label><select id="ntGroup">${S.config.groups.map(g=>`<option value="${g.id}" ${g.id===myG?'selected':''}>${esc(g.name)}</option>`).join('')}</select></div>
-   <div><label class="f">Caso</label><select id="ntCase">${CASE_ORDER.map(id=>`<option value="${id}">${CASES[id].emoji} ${esc(CASES[id].name)}</option>`).join('')}</select></div>
-  </div>${isStudentMe()?'<label style="display:block;margin-top:8px"><input type="checkbox" id="ntJoin" checked> Unirme a este equipo</label>':''}<button class="btn or" id="ntAdd" style="margin-top:10px">🆕 Crear equipo</button></div>`:''}
-  <div class="card" style="margin-top:16px"><h2>➕ Integrar estudiante nuevo</h2><div class="grid g3">
-   <div><label class="f">Nombre completo</label><input type="text" id="nsName" placeholder="Nombre Apellido Apellido"></div>
-   <div><label class="f">Grupo</label><select id="nsGroup">${S.config.groups.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('')}</select></div>
-   <div><label class="f">Equipo</label><select id="nsTeam"></select></div>
-  </div><button class="btn or" id="nsAdd" style="margin-top:10px">➕ Integrar</button></div>`;
+  <h2 style="margin-top:22px">🗂️ Todos los equipos</h2>
+  ${S.config.groups.map(g=>`<h3>${esc(g.name)}</h3><div class="grid g3">${S.config.teams.filter(t=>t.group===g.id).map(t=>teamCard(t,tch)).join('')}</div>`).join('')}`;
 }
-function teamCard(t,tch,myG){
-  const p=teamProgress(t.id); const roles=(S.teams[t.id]?.blocks?.meta?.roles)||{}; const st=S.config.settings; const C=CASES[t.caseId]||CASES.pamasur;
-  const iAmIn=isStudentMe()&&t.members.includes(ME.name);
-  return `<div class="card team" style="--tc:${TEAM_COLORS[t.id]||C.color}"><div class="row" style="justify-content:space-between"><h3 style="margin:0;font-size:1.4rem">${esc(t.emoji)} ${esc(t.name)}</h3><span class="tag">${t.members.length}/${st.maxTeam} lugares · ${p}%</span></div>
-   <div style="margin:4px 0 6px"><span class="tag" style="background:${C.color}22;color:${C.color}">${C.emoji} ${esc(C.name)}</span></div>
-   ${t.members.map(m=>`<div class="member"><span>${esc(m)}${roles[m]?`<br><span class="tag">${esc(roles[m])}</span>`:''}</span>${tch?`<span class="row" style="gap:4px;flex-wrap:nowrap"><select data-move="${esc(m)}" data-from="${t.id}" style="width:auto;padding:2px 4px;font-size:.78rem"><option value="">mover…</option>${S.config.teams.filter(x=>x.id!==t.id).map(x=>`<option value="${x.id}">${esc(x.emoji+' '+x.name)}</option>`).join('')}</select><button class="btn gh sm" data-rm="${esc(m)}" data-from="${t.id}" title="Quitar del equipo">✖</button></span>`:''}</div>`).join('')||'<p class="muted" style="font-size:.85rem">Equipo vacío: ¡únete!</p>'}
-   ${ME.team===t.id&&t.members.length?`<div style="margin-top:8px"><b style="font-size:.85rem">Roles de mi equipo:</b>${t.members.map(m=>`<div class="row" style="flex-wrap:nowrap;margin-top:4px"><span style="font-size:.82rem;flex:1">${esc(m.split(' ')[0])}</span><select data-role="${esc(m)}" style="width:62%;font-size:.8rem;padding:3px">${['',...ROLES].map(r=>`<option ${roles[m]===r?'selected':''} value="${esc(r)}">${r||'— rol —'}</option>`).join('')}</select></div>`).join('')}</div>`:''}
-   <div class="row" style="margin-top:8px">
-    ${iAmIn?'<span class="tag" style="background:#dcfce7;color:#166534">✔️ Tu equipo</span>':''}
-    ${isStudentMe()&&!iAmIn&&myG===t.group&&canJoin(t)?`<button class="btn or sm" data-selfjoin="${t.id}">🙋 Unirme a este equipo</button>`:''}
-    ${isStudentMe()&&!iAmIn&&myG===t.group&&st.selfJoin&&!canJoin(t)?'<span class="tag">Equipo lleno</span>':''}
-    ${!isStudentMe()&&ME.team!==t.id?`<button class="btn gh sm" data-view="${t.id}">👀 Ver su trabajo</button>`:''}
-    ${tch?`<button class="btn gh sm" data-rename="${t.id}">✏️ Renombrar</button>`:''}
-    ${tch&&!t.members.length?`<button class="btn bad sm" data-delteam="${t.id}">Eliminar equipo vacío</button>`:''}
-   </div></div>`;
+function teamCard(t,tch){
+  const p=teamProgress(t.id), C=CASES[t.caseId]||CASES.pamasur, st=S.config.settings;
+  return `<div class="card team" style="border-top:7px solid ${C.color}"><div class="row" style="justify-content:space-between"><h3 style="margin:0;font-size:1.35rem">${esc(t.emoji)} ${esc(t.name)}</h3><span class="tag">${t.members.length}/${st.maxTeam} · ${p}%</span></div>
+   <div style="margin:6px 0"><span class="tag" style="background:${C.color}22;color:${C.color}">${C.emoji} ${esc(C.name)}</span></div>
+   ${tch?(t.members.map(m=>`<div class="member"><span>${esc(m)}</span><span class="row" style="gap:4px;flex-wrap:nowrap"><select data-move="${esc(m)}" data-from="${t.id}" style="width:auto;padding:2px 4px;font-size:.8rem"><option value="">mover…</option>${S.config.teams.filter(x=>x.id!==t.id&&x.group===t.group).map(x=>`<option value="${x.id}">${esc(x.emoji+' '+x.name)}</option>`).join('')}</select><button class="btn gh sm" data-rm="${esc(m)}" data-from="${t.id}" title="Quitar">✖</button></span></div>`).join('')||'<p class="muted" style="font-size:.9rem">Sin registros todavía.</p>'):`<p class="muted" style="font-size:.9rem">${t.members.length?t.members.length+' integrante(s) registrado(s)':'Sin registros todavía'}</p>`}
+   <div class="row" style="margin-top:8px">${ME.team===t.id?'<span class="tag" style="background:#dcfce7;color:#166534">✔️ Tu equipo</span>':''}${tch?`<button class="btn gh sm" data-view="${t.id}">👀 Ver su trabajo</button>`:''}</div></div>`;
 }
 after.equipos=()=>{
-  const fillTeams=()=>{const g=$('#nsGroup').value;$('#nsTeam').innerHTML=`<option value="auto">🎲 Automático (el equipo más pequeño)</option><option value="pool">🆕 Sin equipo (que elija después)</option>`+S.config.teams.filter(t=>t.group===g).map(t=>`<option value="${t.id}">${esc(t.emoji+' '+t.name)}</option>`).join('');};
-  $('#nsGroup').onchange=fillTeams; fillTeams();
-  $('#nsAdd').onclick=()=>{const n=$('#nsName').value.trim().replace(/\s+/g,' ');if(n.length<5){toast('Escribe el nombre completo');return;}
-    if(namesOfGroup('L').concat(namesOfGroup('A')).some(m=>m.toLowerCase()===n.toLowerCase())||S.config.teams.some(t=>t.members.some(m=>m.toLowerCase()===n.toLowerCase()))){toast('Ese nombre ya está registrado');return;}
-    const g=$('#nsGroup').value;let tid=$('#nsTeam').value;
-    if(tid==='pool'){groupById(g).pool.push(n);saveConfig();toast(`✔️ ${n} agregado (sin equipo)`);render();return;}
-    if(tid==='auto'){const ts=S.config.teams.filter(t=>t.group===g).sort((a,b)=>a.members.length-b.members.length);if(!ts.length){groupById(g).pool.push(n);saveConfig();render();return;}tid=ts[0].id;}
-    teamById(tid).members.push(n); saveConfig(); addLog(tid,`➕ Se integró ${n} al equipo`); toast(`✔️ ${n} integrado a ${teamById(tid).name}`); render();};
-  const nt=$('#ntAdd'); if(nt) nt.onclick=()=>{const g=$('#ntGroup').value;const used=new Set(S.config.teams.filter(t=>t.group===g).map(t=>t.name));let k=1;while(used.has('Equipo '+k))k++;const name='Equipo '+k;
-    const t={id:'T'+uid(),group:g,name,emoji:TEAM_EMOJIS[k-1]||'👥',caseId:$('#ntCase').value,members:[]};
-    S.config.teams.push(t); saveConfig(); const j=$('#ntJoin');
-    if(j&&j.checked&&isStudentMe()){ if(groupOfName(ME.name)&&groupOfName(ME.name)!==t.group){toast('Solo puedes unirte a equipos de tu grupo');render();return;} joinTeam(ME.name,t.id); ME.team=t.id; lsSet(LS_ME,ME); subscribeTeam(t.id); }
-    toast(`🆕 Equipo ${name} creado`); render();};
+  const ra=$('#regAdd'); if(ra){const go=()=>{const n=$('#regName').value;const err=registerMember(ME.team,n);if(err)return toast(err);const nm=n.trim().replace(/\s+/g,' ');if(!isStudentMe()){ME.name=nm;lsSet(LS_ME,ME);}toast(`✔️ ${nm} registrado`);render();};ra.onclick=go;$('#regName').onkeydown=e=>{if(e.key==='Enter')go()};}
   $('#main').onclick=e=>{const b=e.target.closest('button');if(!b)return;
-    if(b.dataset.selfjoin){const t=teamById(b.dataset.selfjoin);openConfirm(`¿Unirte al equipo ${t.name}? Dejarás tu equipo actual.`,()=>{if(!canJoin(t)){toast('El equipo ya está lleno');return;}joinTeam(ME.name,t.id);ME.team=t.id;lsSet(LS_ME,ME);subscribeTeam(t.id);toast(`🙋 ¡Bienvenido(a) a ${t.name}!`);render();});}
-    if(b.dataset.view){ME={team:b.dataset.view,name:isTeacher()?'Docente':'Invitado'};lsSet(LS_ME,ME);subscribeTeam(ME.team);location.hash='#canvas';}
-    if(b.dataset.rm&&isTeacher()){openConfirm(`¿Quitar a ${b.dataset.rm} del equipo? Quedará como “sin equipo”.`,()=>{const t=teamById(b.dataset.from);t.members=t.members.filter(m=>m!==b.dataset.rm);groupById(t.group).pool.push(b.dataset.rm);saveConfig();addLog(t.id,`✖ ${b.dataset.rm} salió del equipo (docente)`);render();});}
-    if(b.dataset.rename&&isTeacher()){const t=teamById(b.dataset.rename);openEdit(t.name,v=>{if(v.trim()){t.name=v.trim();saveConfig();render();}},'Nuevo nombre del equipo');}
-    if(b.dataset.delteam&&isTeacher()){S.config.teams=S.config.teams.filter(t=>t.id!==b.dataset.delteam);saveConfig();render();}
+    if(b.dataset.view&&isTeacher()){ME={team:b.dataset.view,name:'Docente'};lsSet(LS_ME,ME);subscribeTeam(ME.team);location.hash='#canvas';}
+    if(b.dataset.rm&&isTeacher()){openConfirm(`¿Quitar a ${b.dataset.rm} del equipo?`,()=>{const t=teamById(b.dataset.from);t.members=t.members.filter(m=>m!==b.dataset.rm);saveConfig();addLog(t.id,`✖ ${b.dataset.rm} salió del equipo (docente)`);render();});}
   };
   $('#main').onchange=e=>{const el=e.target;
-    if(el.dataset.move&&el.value&&isTeacher()){joinTeam(el.dataset.move,el.value);render();}
+    if(el.dataset.move&&el.value&&isTeacher()){const from=teamById(el.dataset.from),to=teamById(el.value);if(to.members.length>=S.config.settings.maxTeam){toast('Ese equipo ya está completo');render();return;}from.members=from.members.filter(m=>m!==el.dataset.move);to.members.push(el.dataset.move);saveConfig();addLog(to.id,`↪️ ${el.dataset.move} se movió a este equipo (docente)`);render();}
     if(el.dataset.role!=null&&ME.team){const t=T(ME.team);t.blocks.meta=t.blocks.meta||{roles:{},updatedAt:0};t.blocks.meta.roles=t.blocks.meta.roles||{};t.blocks.meta.roles[el.dataset.role]=el.value;touchBlock(ME.team,'meta',{log:`🎭 ${el.dataset.role.split(' ')[0]}: ${el.value||'sin rol'}`});}
   };
 };
@@ -2061,13 +2033,10 @@ function vDocente(){
    <div class="row"><a class="btn gh sm" href="#reporte" data-openrep="${DOCT}">📄 Ver reporte de este equipo</a><span class="bigscore" style="font-size:1.6rem">Calificación: ${gradeOf(gr.levels)!=null?gradeOf(gr.levels).toFixed(1):'—'} / 10</span></div>
    <div style="overflow-x:auto"><table class="rub"><tr><th>Criterio</th><th>Peso</th>${LVL.map(l=>`<th class="${l.cl}">${l.n}</th>`).join('')}<th>Comentario</th></tr>${RUBRIC.map(r=>`<tr><td><b>${r.n}</b></td><td>${r.w}</td>${LVL.map((l,i)=>`<td><div class="lv ${gr.levels&&gr.levels[r.id]===i?'on':''}" data-gr="${r.id}" data-l="${i}" style="font-size:.78rem">${esc(r.lv[i])}</div></td>`).join('')}<td><textarea data-gc="${r.id}" style="min-height:60px;font-size:.8rem">${esc((gr.comments||{})[r.id]||'')}</textarea></td></tr>`).join('')}</table></div>
    <label class="f">Comentario general</label><textarea id="grGen">${esc(gr.general||'')}</textarea></div>
-  <div class="card"><h2>🧑‍🤝‍🧑 Formación de equipos y casos</h2>
-   <label style="display:block;margin:6px 0"><input type="checkbox" id="stSelf" ${S.config.settings.selfJoin?'checked':''}> <b>Formación libre:</b> los alumnos pueden unirse, cambiarse o crear equipos</label>
+  <div class="card"><h2>🧑‍🤝‍🧑 Equipos, claves y casos</h2><p class="muted">Cada equipo entra con su clave (te la di por separado) y registra a sus integrantes. Para mover o quitar a alguien usa 👥 Mi equipo → Todos los equipos.</p>
    <div class="row"><label class="f" style="margin:0">Máximo de integrantes por equipo</label><input type="number" id="stMax" min="2" max="10" value="${S.config.settings.maxTeam}" style="width:90px"></div>
-   <div class="row" style="margin-top:10px">${S.config.groups.map(g=>`<button class="btn gh sm" data-freegroup="${g.id}">🆓 Liberar a todos en ${esc(g.name)} (que formen equipos desde cero)</button>`).join('')}</div>
    <h3 style="margin-top:14px">📖 Caso de cada equipo</h3><div style="overflow-x:auto"><table><tr><th>Equipo</th><th>Grupo</th><th>Integrantes</th><th>Caso</th></tr>${S.config.teams.map(t=>`<tr><td>${esc(t.emoji+' '+t.name)}</td><td>${esc(groupById(t.group).name)}</td><td>${t.members.length}</td><td><select data-tcase="${t.id}">${CASE_ORDER.map(id=>`<option value="${id}" ${t.caseId===id?'selected':''}>${CASES[id].emoji} ${esc(CASES[id].name)}</option>`).join('')}</select></td></tr>`).join('')}</table></div></div>
-  <div class="card"><h2>🔀 Reorganizar equipos</h2><p class="muted">Mezcla al azar a los integrantes de un grupo en equipos de 5 (los sobrantes se reparten). El trabajo ya hecho se queda con el nombre del equipo.</p><div class="row">${S.config.groups.map(g=>`<button class="btn gh sm" data-reshuffle="${g.id}">🎲 Reorganizar ${esc(g.name)}</button>`).join('')}<button class="btn bad sm" id="resetCfg">↩️ Restaurar lista original (todos sin equipo)</button></div>
-   <p class="muted" style="margin-top:10px">Mover o dar de baja integrantes: pestaña 👥 Equipos (en modo docente aparecen los controles).</p></div>
+  <div class="card"><h2>↩️ Reiniciar</h2><p class="muted">Borra los integrantes registrados y deja los casos por defecto (no borra el trabajo de los equipos).</p><button class="btn bad sm" id="resetCfg">↩️ Restaurar equipos y casos por defecto</button></div>
   <div class="card"><button class="btn gh sm" id="logoutT">Salir del modo docente</button></div>`;
 }
 let OVERVIEW_CACHE={};
@@ -2117,34 +2086,29 @@ function modal(html,onMount){ const r=$('#modalRoot'); r.innerHTML=`<div class="
 function closeModal(){ $('#modalRoot').innerHTML=''; }
 function openConfirm(msg,ok){ modal(`<h2>¿Seguro?</h2><p>${esc(msg)}</p><div class="row"><button class="btn bad" id="mOk">Sí, continuar</button><button class="btn gh" id="mNo">Cancelar</button></div>`,r=>{r.querySelector('#mOk').onclick=()=>{closeModal();ok()};r.querySelector('#mNo').onclick=closeModal;}); }
 function openEdit(val,cb,title){ modal(`<h2>${esc(title||'Editar')}</h2><textarea id="mTxt" style="min-height:80px">${esc(val)}</textarea><div class="row" style="margin-top:10px"><button class="btn or" id="mOk">Guardar</button><button class="btn gh" id="mNo">Cancelar</button></div>`,r=>{const t=r.querySelector('#mTxt');t.focus();r.querySelector('#mOk').onclick=()=>{closeModal();cb(t.value)};r.querySelector('#mNo').onclick=closeModal;}); }
-function openWho(preTeam){
-  let g=preTeam?teamById(preTeam).group:(ME.team&&teamById(ME.team)?teamById(ME.team).group:'L'), step='name', name=null;
-  const st=S.config.settings;
-  const finish=(tid,nm)=>{ME={team:tid,name:nm};lsSet(LS_ME,ME);if(tid)subscribeTeam(tid);closeModal();toast(`¡Hola, ${nm.split(' ')[0]}! 🐝`);if(VIEW==='inicio') location.hash='#canvas'; else render();};
-  const teamBtns=(filterFull)=>S.config.teams.filter(t=>t.group===g).map(t=>{const full=t.members.length>=st.maxTeam;return `<button class="btn ${t.members.includes(name)?'or':'gh'}" style="flex-direction:column;align-items:flex-start;min-width:170px" data-wt="${t.id}" ${filterFull&&full&&!t.members.includes(name)?'disabled':''}><span style="font-size:1.1rem">${esc(t.emoji+' '+t.name)}</span><small style="font-weight:600">${full?'Lleno':(st.maxTeam-t.members.length)+' lugar(es) libre(s)'} · ${CASES[t.caseId].emoji} ${esc(CASES[t.caseId].name)}</small></button>`}).join('');
+function openWho(){
+  let step='key', team=ME.team&&teamById(ME.team)||null;
+  if(team) step='name';
+  const finish=(tid,nm)=>{ME={team:tid,name:nm};lsSet(LS_ME,ME);subscribeTeam(tid);closeModal();toast(`¡Hola, ${nm.split(' ')[0]}! 🐝`);if(VIEW==='inicio')location.hash='#equipos';else render();};
   const draw=()=>{
-   let h=`<h2>👤 ¿Quién eres?</h2><p class="muted">Se guarda en este dispositivo para que sigas donde te quedaste.</p>
-   <label class="f">1. Tu grupo</label><div class="row">${S.config.groups.map(x=>`<button class="btn ${x.id===g?'':'gh'} sm" data-wg="${x.id}">${esc(x.name)}</button>`).join('')}</div>`;
-   if(step==='name') h+=`<label class="f">2. Tu nombre</label><div class="grid g2" style="gap:6px">${namesOfGroup(g).map(m=>{const t=teamOfName(m);return `<button class="btn gh sm" style="justify-content:space-between" data-wn="${esc(m)}"><span>${esc(m)}</span><span class="tag">${t?esc(t.emoji+' '+t.name):'🆕 sin equipo'}</span></button>`}).join('')}</div>
-     <div class="row" style="margin-top:10px"><button class="btn gh sm" data-wnew="1">✍️ No aparezco en la lista</button><button class="btn gh sm" data-wguest="1">👀 Solo estoy viendo</button></div>`;
-   if(step==='new') h+=`<label class="f">2. Escribe tu nombre completo</label><input type="text" id="wNew" placeholder="Nombre Apellido Apellido"><button class="btn or sm" data-wnewok="1" style="margin-top:8px">Continuar</button>`;
-   if(step==='team'){ const cur=teamOfName(name);
-     h+=`<label class="f">2. Tu nombre</label><div class="row"><b>✅ ${esc(name)}</b><button class="btn gh sm" data-wg="${g}">Cambiar</button></div><label class="f">3. Tu equipo</label>${cur?`<div class="callout c-tip"><span class="ic">✅</span><div>Estás en <b>${esc(cur.emoji+' '+cur.name)}</b> (${esc(CASES[cur.caseId].full)}). <button class="btn or sm" data-wstay="1">Continuar con mi equipo</button></div></div>`:`<div class="callout c-warn"><span class="ic">🆕</span><div>Todavía no tienes equipo. ${st.selfJoin?'Elige uno con lugar disponible:':'La docente te asignará uno; mientras, puedes entrar como invitado.'}</div></div>`}
-     ${st.selfJoin?`<p class="muted" style="font-size:.85rem">${cur?'¿Te quieres cambiar? Toca otro equipo:':''}</p><div class="row">${teamBtns(true)}</div><p class="muted" style="font-size:.82rem;margin-top:8px">¿Quieren formar un equipo nuevo? Entra y ve a 👥 Equipos → “Crear un equipo nuevo”.</p>${!cur?`<button class="btn gh sm" data-wnoteam="1">Entrar sin equipo por ahora</button>`:''}`:(!cur?`<button class="btn gh sm" data-wnoteam="1">Entrar</button>`:'')}`; }
-   if(step==='guest') h+=`<label class="f">2. ¿Qué equipo quieres ver?</label><div class="row">${teamBtns(false)}</div>`;
-   return h; };
-  modal(draw(),r=>{ const M=r.querySelector('.modal'); const redraw=()=>{M.innerHTML=draw();const i=M.querySelector('#wNew');if(i)i.focus();};
-   M.onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
-    if(b.dataset.wg){g=b.dataset.wg;step='name';redraw();}
-    else if(b.dataset.wn){name=b.dataset.wn;step='team';redraw();}
-    else if(b.dataset.wnew){step='new';redraw();}
-    else if(b.dataset.wnewok){const v=(M.querySelector('#wNew').value||'').trim().replace(/\s+/g,' ');if(v.length<5){toast('Escribe tu nombre completo');return;}if(!namesOfGroup(g).some(m=>m.toLowerCase()===v.toLowerCase())){groupById(g).pool.push(v);saveConfig();}name=namesOfGroup(g).find(m=>m.toLowerCase()===v.toLowerCase())||v;step='team';redraw();}
-    else if(b.dataset.wguest){step='guest';redraw();}
-    else if(b.dataset.wstay){finish(teamOfName(name).id,name);}
-    else if(b.dataset.wnoteam){finish(null,name);}
-    else if(b.dataset.wt){ if(step==='guest'){finish(b.dataset.wt,'Invitado');return;} const t=teamById(b.dataset.wt); if(t.members.includes(name)){finish(t.id,name);return;} if(!canJoin(t)){toast('Ese equipo ya está lleno');return;} joinTeam(name,t.id); finish(t.id,name); }
+   if(step==='key') return `<h2>🔑 Entra con la clave de tu equipo</h2><p class="muted">Tu profesora te da la clave. Ejemplo: <b>LID1-XXXX</b> (Liderazgo) o <b>ADM1-XXXX</b> (Administración).</p>
+     <input type="text" id="wKey" placeholder="Escribe la clave" autocomplete="off" style="font-size:1.3rem;text-transform:uppercase;letter-spacing:.08em"><div class="row" style="margin-top:12px"><button class="btn or big" data-wkey="1">Entrar ➡️</button></div><p class="muted" style="font-size:.85rem;margin-top:10px">Se recuerda en este dispositivo para que sigas donde te quedaste.</p>`;
+   const st=S.config.settings, C=CASES[team.caseId];
+   return `<h2>${esc(teamLabel(team))}</h2><div class="callout c-tip"><span class="ic">${C.emoji}</span><div>Caso asignado: <b>${esc(C.full)}</b></div></div>
+    <label class="f">¿Quién eres?</label>
+    ${team.members.length?`<div class="grid g2" style="gap:8px">${team.members.map(m=>`<button class="btn gh" style="justify-content:flex-start" data-wn="${esc(m)}">👤 ${esc(m)}</button>`).join('')}</div>`:'<p class="muted">Todavía nadie se ha registrado en este equipo.</p>'}
+    ${team.members.length<st.maxTeam?`<label class="f" style="margin-top:14px">📝 ¿Es tu primera vez? Registra tu nombre completo</label><div class="row" style="flex-wrap:nowrap"><input type="text" id="wNew" placeholder="Nombre y apellidos"><button class="btn or" data-wnew="1">Registrarme</button></div>`:'<p class="tag">Equipo completo ✔️</p>'}
+    <div class="row" style="margin-top:14px"><button class="btn gh sm" data-wother="1">🔑 Usar otra clave</button></div>`;};
+  modal(draw(),r=>{const M=r.querySelector('.modal');const redraw=()=>{M.innerHTML=draw();const i=M.querySelector('#wKey')||M.querySelector('#wNew');if(i&&step==='key')i.focus();};redraw();
+   const tryKey=async()=>{const t=await teamByKey(M.querySelector('#wKey').value);if(!t){toast('Clave incorrecta. Revísala con tu profesora.');return;}team=t;step='name';redraw();};
+   const tryNew=()=>{const v=M.querySelector('#wNew').value;const err=registerMember(team.id,v);if(err)return toast(err);finish(team.id,v.trim().replace(/\s+/g,' '));};
+   M.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.wkey)tryKey();
+    if(b.dataset.wn)finish(team.id,b.dataset.wn);
+    if(b.dataset.wnew)tryNew();
+    if(b.dataset.wother){team=null;step='key';redraw();}
    };
-   M.onkeydown=e=>{if(e.key==='Enter'&&step==='new'){e.preventDefault();M.querySelector('[data-wnewok]').click();}};
+   M.onkeydown=e=>{if(e.key!=='Enter')return;e.preventDefault();if(step==='key')tryKey();else if(e.target.id==='wNew')tryNew();};
   });
 }
 async function downloadFile(name,data,mime){
@@ -2169,7 +2133,7 @@ function openImport(){
 /* ---------- TUTORIAL GUIADO ---------- */
 const TOUR=[
  {i:'🐝',t:'¡Hola! Soy Kab, tu abeja coach',d:'En este laboratorio tu equipo va a diseñar el modelo de negocio de una empresa real de la región, como PAMASUR, El Yucateco, Sal Sol, Kekén, la miel orgánica maya o el Ingenio de Pucté. Te voy a guiar paso a paso.'},
- {i:'👥',t:'1. Únete a un equipo',d:'Toca “¿Quién eres?” arriba a la derecha, elige tu grupo y tu nombre, y únete a un equipo (o creen uno nuevo en 👥 Equipos). Así tu trabajo queda guardado con tu equipo.'},
+ {i:'🔑',t:'1. Entra con la clave de tu equipo',d:'Toca “🔑 Entrar con la clave de mi equipo” arriba a la derecha, escribe la clave que te dio tu profesora y registra tu nombre la primera vez. Tu equipo ya tiene un caso asignado.'},
  {i:'📖',t:'2. Investiga el caso y aplica la encuesta',d:'En “El caso” están los datos verificados y las fuentes para investigar. En “📊 Encuesta” tienen un cuestionario listo: apliquen mínimo 20 y los resultados se grafican solos.'},
  {i:'🧩',t:'3. Llena el Canvas en orden 1 → 9',d:'Toca un bloque: a la izquierda APRENDES (explicación y ejemplo resuelto de un food truck) y a la derecha lo HACES con tu equipo en 4 pasos. Kab, la abeja, te revisa en vivo.'},
  {i:'✨',t:'4. Ideas propias + justificación',d:'Las propuestas ayudan a arrancar, pero la rúbrica premia las ideas propias del equipo y las justificaciones con datos. Asignen un responsable por bloque.'},
