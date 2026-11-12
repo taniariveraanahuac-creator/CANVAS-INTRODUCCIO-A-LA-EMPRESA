@@ -2094,6 +2094,25 @@ after.reporte=()=>{
 
 /* ---------- DOCENTE ---------- */
 let DOCT=null;
+
+const KEYS_ENC={"s":"EvhEotu/+cfdiPuyIrpwIg==","i":"Fb7Uyj5/1I2jH5xv","c":"ZDzTYwMRfs43ifqrmPxL16cLqlFznMA3eqZ6zzRy+dZhXjG0uK/Y/T/EpS0uxt2l0/nMRpvxd15GSt4GkN7UxqmF3aEUG/LoNrrAOCzRmrct1CV91+QlWMZPSm11cafQmATJEFlx1O6EOvnWpKYePXZ7b5oUGMScXRVAMwc22eCzZ4BDoaAf23werr80HoqcWYc9XmLAjvgpCaYZBwHa3xD5J3RSxn0JwK8="};
+let TKEYS=null;
+async function unlockKeys(pin){try{const b=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveKey']);const k=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b(KEYS_ENC.s),iterations:150000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b(KEYS_ENC.i)},k,b(KEYS_ENC.c));TKEYS=JSON.parse(new TextDecoder().decode(pt));try{sessionStorage.setItem('canvaslab-k',JSON.stringify(TKEYS))}catch(e){}return true}catch(e){return false}}
+try{const _k=sessionStorage.getItem('canvaslab-k');if(_k)TKEYS=JSON.parse(_k)}catch(e){}
+function keysCard(){
+  const grp=g=>{const ts=S.config.teams.filter(t=>t.group===g.id);const col=g.id.toLowerCase().startsWith('l')||/lider/i.test(g.name)?'#7c3aed':'#0e7490';
+    return `<div class="kgrp" style="border:2px solid ${col};border-radius:16px;padding:14px;flex:1;min-width:260px"><h3 style="margin:0 0 4px;color:${col}">${esc(g.name)}</h3><div class="muted" style="font-size:.85rem;margin-bottom:8px">${esc(g.horario||'')}</div>
+    <table style="width:100%"><tr><th>Equipo</th><th>Clave</th><th>Caso</th><th></th></tr>${ts.map(t=>`<tr><td style="white-space:nowrap"><b>${esc(t.emoji+' '+t.name)}</b></td><td style="white-space:nowrap"><code style="font-size:1.05rem;letter-spacing:1px;background:#f1f5f9;padding:3px 8px;border-radius:8px">${esc(TKEYS[t.id]||'—')}</code></td><td style="font-size:.85rem">${CASES[t.caseId].emoji} ${esc(CASES[t.caseId].name)}</td><td><button class="btn gh sm" data-cpk="${esc(TKEYS[t.id]||'')}">📋</button></td></tr>`).join('')}</table>
+    <button class="btn sm" style="margin-top:8px" data-cpgrp="${g.id}">📋 Copiar claves de ${esc(g.name.replace('Grupo ',''))}</button></div>`};
+  if(!TKEYS) return `<div class="card" id="keysCard"><h2>🔑 Claves de los equipos por grupo</h2><p class="muted">Escribe la clave docente para mostrar las claves de Liderazgo y de Administración.</p><div class="row"><input type="password" id="kPin" placeholder="Clave docente" style="max-width:240px"><button class="btn or sm" id="kUnlock">🔓 Mostrar claves</button></div></div>`;
+  return `<div class="card" id="keysCard"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🔑 Claves de los equipos por grupo</h2><div class="row"><button class="btn gh sm" id="kPrint">🖨️ Imprimir tarjetas</button><button class="btn gh sm" id="kHide">🙈 Ocultar</button></div></div>
+  <p class="muted">Entrega a cada equipo solo su clave. Con ella entran en 👥 Mi equipo y registran a sus integrantes. No las publiques en Brightspace ni en grupos abiertos.</p>
+  <div class="row" style="align-items:stretch;gap:14px">${S.config.groups.map(grp).join('')}</div></div>`;
+}
+function keysPrintable(){
+  const cards=S.config.groups.map(g=>`<h2>${esc(g.name)}</h2><div class="grid">${S.config.teams.filter(t=>t.group===g.id).map(t=>`<div class="kc"><div class="g">${esc(g.name)}</div><div class="t">${esc(t.name)}</div><div class="k">${esc(TKEYS[t.id]||'')}</div><div class="c">Caso: ${esc(CASES[t.caseId].name)}</div><div class="h">Entra a Canvas Lab → 👥 Mi equipo → escribe esta clave y registra a tus compañeros.</div></div>`).join('')}</div>`).join('<div style="page-break-after:always"></div>');
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Claves Canvas Lab</title><style>body{font-family:system-ui,sans-serif;padding:20px}h2{margin:18px 0 10px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.kc{border:2px dashed #555;border-radius:14px;padding:16px}.g{font-size:12px;color:#666;text-transform:uppercase}.t{font-size:22px;font-weight:800}.k{font-family:monospace;font-size:28px;letter-spacing:2px;background:#f1f5f9;padding:6px 10px;border-radius:8px;margin:8px 0;display:inline-block}.c{font-size:14px}.h{font-size:12px;color:#555;margin-top:6px}</style></head><body><h1>🔑 Claves de equipos · Canvas Lab ADM1401</h1>${cards}</body></html>`;
+}
 function vDocente(){
   if(!isTeacher()) return `<div class="card" style="max-width:520px;margin:30px auto;text-align:center"><div style="font-size:54px">🍎</div><h2>Panel docente</h2><p class="muted">Para la profesora: evaluación con rúbrica, avance de todos los equipos, reorganización de equipos y reportes generales.</p><input type="password" id="pin" placeholder="Clave docente"><button class="btn or" id="pinOk" style="margin-top:10px">Entrar</button></div>`;
   DOCT=DOCT||S.config.teams[0].id; const gr=S.grades[DOCT]||{levels:{},comments:{},general:''};
@@ -2105,7 +2124,8 @@ function vDocente(){
    <div class="row"><a class="btn gh sm" href="#reporte" data-openrep="${DOCT}">📄 Ver reporte de este equipo</a><span class="bigscore" style="font-size:1.6rem">Calificación: ${gradeOf(gr.levels)!=null?gradeOf(gr.levels).toFixed(1):'—'} / 10</span></div>
    <div style="overflow-x:auto"><table class="rub"><tr><th>Criterio</th><th>Peso</th>${LVL.map(l=>`<th class="${l.cl}">${l.n}</th>`).join('')}<th>Comentario</th></tr>${RUBRIC.map(r=>`<tr><td><b>${r.n}</b></td><td>${r.w}</td>${LVL.map((l,i)=>`<td><div class="lv ${gr.levels&&gr.levels[r.id]===i?'on':''}" data-gr="${r.id}" data-l="${i}" style="font-size:.78rem">${esc(r.lv[i])}</div></td>`).join('')}<td><textarea data-gc="${r.id}" style="min-height:60px;font-size:.8rem">${esc((gr.comments||{})[r.id]||'')}</textarea></td></tr>`).join('')}</table></div>
    <label class="f">Comentario general</label><textarea id="grGen">${esc(gr.general||'')}</textarea></div>
-  <div class="card"><h2>🧑‍🤝‍🧑 Equipos, claves y casos</h2><p class="muted">Cada equipo entra con su clave (te la di por separado) y registra a sus integrantes. Para mover o quitar a alguien usa 👥 Mi equipo → Todos los equipos.</p>
+  ${keysCard()}
+  <div class="card"><h2>🧑‍🤝‍🧑 Equipos y casos</h2><p class="muted">Cada equipo entra con su clave (arriba) y registra a sus integrantes. Para mover o quitar a alguien usa 👥 Mi equipo → Todos los equipos.</p>
    <div class="row"><label class="f" style="margin:0">Máximo de integrantes por equipo</label><input type="number" id="stMax" min="2" max="10" value="${S.config.settings.maxTeam}" style="width:90px"></div>
    <h3 style="margin-top:14px">📖 Caso de cada equipo</h3><div style="overflow-x:auto"><table><tr><th>Equipo</th><th>Grupo</th><th>Integrantes</th><th>Caso</th></tr>${S.config.teams.map(t=>`<tr><td>${esc(t.emoji+' '+t.name)}</td><td>${esc(groupById(t.group).name)}</td><td>${t.members.length}</td><td><select data-tcase="${t.id}">${CASE_ORDER.map(id=>`<option value="${id}" ${t.caseId===id?'selected':''}>${CASES[id].emoji} ${esc(CASES[id].name)}</option>`).join('')}</select></td></tr>`).join('')}</table></div></div>
   <div class="card"><h2>↩️ Reiniciar</h2><p class="muted">Borra los integrantes registrados y deja los casos por defecto (no borra el trabajo de los equipos).</p><button class="btn bad sm" id="resetCfg">↩️ Restaurar equipos y casos por defecto</button></div>
@@ -2122,13 +2142,18 @@ async function refreshAllFromCloud(){
   lsSet(LS,S); if(VIEW==='docente'){$('#overview').innerHTML=overviewTable();} toast('✔️ Avance actualizado');
 }
 after.docente=()=>{
-  if(!isTeacher()){ $('#pinOk').onclick=()=>{ sha256hex($('#pin').value.trim()).then(h=>{if(h&&h===TEACHER_PIN_HASH){teacherPinOk=true;try{sessionStorage.setItem('canvaslab-pin','1')}catch(e){};render();} else toast('Clave incorrecta');}); }; $('#pin').onkeydown=e=>{if(e.key==='Enter')$('#pinOk').click()}; return; }
+  if(!isTeacher()){ $('#pinOk').onclick=()=>{ sha256hex($('#pin').value.trim()).then(h=>{if(h&&h===TEACHER_PIN_HASH){teacherPinOk=true;const _p=$('#pin').value.trim();unlockKeys(_p).then(()=>render());try{sessionStorage.setItem('canvaslab-pin','1')}catch(e){};render();} else toast('Clave incorrecta');}); }; $('#pin').onkeydown=e=>{if(e.key==='Enter')$('#pinOk').click()}; return; }
   if(CLOUD.on && !after.docente._loaded){after.docente._loaded=true;refreshAllFromCloud();}
   const ensure=()=>{S.grades[DOCT]=S.grades[DOCT]||{levels:{},comments:{},general:'',updatedAt:0};return S.grades[DOCT];};
   $('#main').onclick=e=>{const b=e.target.closest('button,[data-gr],[data-openrep]');if(!b)return;
     if(b.dataset.doct){DOCT=b.dataset.doct;render();}
     if(b.dataset.gr){const g=ensure();g.levels[b.dataset.gr]=+b.dataset.l;saveGrade(DOCT);render();}
     if(b.dataset.openrep){ME={team:b.dataset.openrep,name:'Docente'};lsSet(LS_ME,ME);subscribeTeam(ME.team);}
+    if(b.id==='kUnlock'){const pv=$('#kPin').value.trim();unlockKeys(pv).then(ok=>{if(ok)render();else toast('Clave incorrecta');});}
+    if(b.id==='kHide'){TKEYS=null;try{sessionStorage.removeItem('canvaslab-k')}catch(e){};render();}
+    if(b.id==='kPrint') downloadFile('Claves_equipos_por_grupo.html',keysPrintable(),'text/html');
+    if(b.dataset.cpk){navigator.clipboard.writeText(b.dataset.cpk).then(()=>toast('📋 Clave copiada'),()=>toast(b.dataset.cpk));}
+    if(b.dataset.cpgrp){const g=groupById(b.dataset.cpgrp);const txt=g.name+'\n'+S.config.teams.filter(t=>t.group===g.id).map(t=>t.name+': '+(TKEYS[t.id]||'')).join('\n');navigator.clipboard.writeText(txt).then(()=>toast('📋 Claves de '+g.name+' copiadas'),()=>toast('No se pudo copiar'));}
     if(b.id==='refreshAll') refreshAllFromCloud();
     if(b.id==='dlGeneral') downloadFile('Reporte_general_Canvas_ADM1401.html',reportDoc(generalReport(),'Reporte general Canvas ADM1401'),'text/html');
     if(b.id==='expAll') downloadFile('Respaldo_completo_CanvasLab.json',JSON.stringify({kind:'canvaslab-all',data:S,exportedAt:Date.now()},null,1),'application/json');
@@ -2136,7 +2161,7 @@ after.docente=()=>{
     if(b.dataset.freegroup){openConfirm('¿Sacar a todos los alumnos de sus equipos para que se integren libremente? El trabajo de los equipos se conserva.',()=>{const g=groupById(b.dataset.freegroup);S.config.teams.filter(t=>t.group===g.id).forEach(t=>{g.pool.push(...t.members);t.members=[];});S.config.settings.selfJoin=true;saveConfig();toast('🆓 Listo: los alumnos ya pueden integrarse');render();});}
     if(b.dataset.reshuffle){openConfirm('¿Reorganizar al azar los equipos de este grupo?',()=>{reshuffle(b.dataset.reshuffle);});}
     if(b.id==='resetCfg'){openConfirm('¿Restaurar la lista original con todos los alumnos sin equipo? (no borra el trabajo de los equipos)',()=>{const keep=S.config.groups.map(g=>({id:g.id,horario:g.horario,sessions:g.sessions}));S.config=DEFAULT_CONFIG();keep.forEach(k=>{const g=groupById(k.id);g.horario=k.horario;g.sessions=k.sessions;});saveConfig();render();});}
-    if(b.id==='logoutT'){teacherPinOk=false;try{sessionStorage.removeItem('canvaslab-pin')}catch(e){};render();}
+    if(b.id==='logoutT'){teacherPinOk=false;TKEYS=null;try{sessionStorage.removeItem('canvaslab-pin');sessionStorage.removeItem('canvaslab-k')}catch(e){};render();}
   };
   $('#main').onchange=e=>{const el=e.target; if(el.id==='stSelf'){S.config.settings.selfJoin=el.checked;saveConfig();toast(el.checked?'🔓 Formación libre activada':'🔒 Formación libre desactivada');} if(el.id==='stMax'){S.config.settings.maxTeam=Math.max(2,parseInt(el.value)||6);saveConfig();} if(el.dataset.tcase){teamById(el.dataset.tcase).caseId=el.value;saveConfig();toast('📖 Caso asignado');}};
   $('#main').oninput=e=>{const el=e.target;if(el.dataset.gc){const g=ensure();g.comments=g.comments||{};g.comments[el.dataset.gc]=el.value;saveGrade(DOCT);} if(el.id==='grGen'){ensure().general=el.value;saveGrade(DOCT);}};
