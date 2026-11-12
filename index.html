@@ -1945,15 +1945,20 @@ function isStudentMe(){return ME.name&&!['Invitado','Docente'].includes(ME.name)
 function teamLabel(t){return `${t.emoji} ${t.name} · ${(groupById(t.group)||{}).name||''}`}
 async function teamByKey(k){const h=await sha256hex(String(k||'').trim().toUpperCase());return S.config.teams.find(t=>TEAM_KEY_HASH[t.id]===h)||null}
 function registerMember(tid,name){const t=teamById(tid);name=name.trim().replace(/\s+/g,' ');if(name.length<5)return 'Escribe tu nombre completo';if(S.config.teams.some(x=>x.members.some(m=>m.toLowerCase()===name.toLowerCase())))return 'Ese nombre ya está registrado';if(t.members.length>=S.config.settings.maxTeam)return `El equipo ya tiene ${S.config.settings.maxTeam} integrantes`;t.members.push(name);saveConfig();addLog(tid,`📝 Se registró ${name}`);return ''}
+function normName(n){return String(n||'').trim().replace(/\s+/g,' ')}
+function leaveTeam(tid,name,who){const t=teamById(tid);if(!t)return;t.members=t.members.filter(m=>m!==name);try{const meta=T(tid).blocks.meta;if(meta&&meta.roles&&meta.roles[name]!=null){delete meta.roles[name];touchBlock(tid,'meta',{log:`🎭 Se liberó el rol de ${name.split(' ')[0]}`});}}catch(e){}saveConfig();addLog(tid,`🚪 ${name} se dio de baja del equipo${who?' ('+who+')':''}`);}
+function moveMember(name,toId){const to=teamById(toId),from=teamOfName(name);if(!to)return 'Equipo no encontrado';if(from&&from.id===toId)return '';if(to.members.length>=S.config.settings.maxTeam)return `El equipo ya tiene ${S.config.settings.maxTeam} integrantes`;if(from)leaveTeam(from.id,name,'cambio de equipo');to.members.push(name);saveConfig();addLog(toId,`↪️ ${name} se cambió a este equipo${from?' (antes en '+from.name+')':''}`);return ''}
+function leaveMine(thenKey){const tm=ME.team&&teamById(ME.team);if(!tm||!isStudentMe())return;const nm=ME.name;openConfirm(`¿Darte de baja de ${tm.emoji} ${tm.name}? Tu nombre se quita de este equipo (el trabajo del equipo NO se borra). ${thenKey?'Después escribe la clave de tu equipo correcto.':'Luego podrás inscribirte en tu equipo correcto con su clave.'}`,()=>{leaveTeam(tm.id,nm);ME={team:null,name:nm};lsSet(LS_ME,ME);toast('🚪 Te diste de baja de '+tm.name);render();if(thenKey)openWho(true);});}
 function vEquipos(){
   const tch=isTeacher(), st=S.config.settings, my=ME.team&&teamById(ME.team);
   return `<div class="pagehead"><div><h1>👥 Mi equipo</h1><div class="muted">Cada equipo entra con su clave y registra a sus integrantes (máximo ${st.maxTeam}).</div></div></div>
-  ${howTo(['Toca “🔑 Entrar con la clave de mi equipo” (arriba) y escribe la clave que te dio tu profesora.','Si es la primera vez, registra tu nombre completo.','Repartan roles: cada quien es dueño de unos bloques.'])}
+  ${howTo(['Toca “🔑 Entrar con la clave de mi equipo” (arriba) y escribe la clave que te dio tu profesora.','Si es la primera vez, registra tu nombre completo.','Repartan roles: cada quien es dueño de unos bloques.','¿Te equivocaste de equipo? Toca “🔁 Cambiarme de equipo” o “🚪 Darme de baja” y entra con la clave correcta.'])}
   ${my?`<div class="card team" style="--tc:${CASES[my.caseId].color};border-top:8px solid ${CASES[my.caseId].color}">
     <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(teamLabel(my))}</h2><span class="tag" style="font-size:.95rem">${CASES[my.caseId].emoji} Caso: ${esc(CASES[my.caseId].full)}</span></div>
     <h3 style="margin-top:14px">📝 Integrantes registrados (${my.members.length}/${st.maxTeam})</h3>
-    ${my.members.length?my.members.map(m=>{const roles=(T(my.id).blocks.meta||{}).roles||{};return `<div class="member" style="padding:8px 0"><span style="font-size:1.05rem">${m===ME.name?'👤 ':''}<b>${esc(m)}</b></span><select data-role="${esc(m)}" style="width:auto;min-width:260px">${['',...ROLES].map(r=>`<option ${roles[m]===r?'selected':''} value="${esc(r)}">${r||'— elegir rol —'}</option>`).join('')}</select></div>`}).join(''):'<p class="muted">Aún no hay integrantes. ¡Registra tu nombre abajo!</p>'}
+    ${my.members.length?my.members.map(m=>{const roles=(T(my.id).blocks.meta||{}).roles||{};return `<div class="member" style="padding:8px 0"><span style="font-size:1.05rem">${m===ME.name?'👤 ':''}<b>${esc(m)}</b></span><span class="row" style="gap:6px;flex-wrap:nowrap"><select data-role="${esc(m)}" style="width:auto;min-width:260px">${['',...ROLES].map(r=>`<option ${roles[m]===r?'selected':''} value="${esc(r)}">${r||'— elegir rol —'}</option>`).join('')}</select>${m===ME.name?`<button class="btn gh sm" data-leave="1" title="Me equivoqué de equipo">🚪 Darme de baja</button>`:`<button class="btn gh sm" data-unreg="${esc(m)}" title="Quitar registro equivocado">✖</button>`}</span></div>`}).join(''):'<p class="muted">Aún no hay integrantes. ¡Registra tu nombre abajo!</p>'}
     ${my.members.length<st.maxTeam?`<div class="row" style="margin-top:12px;flex-wrap:nowrap"><input type="text" id="regName" placeholder="Nombre completo del integrante"><button class="btn or" id="regAdd">📝 Registrar</button></div>`:'<p class="tag" style="margin-top:10px">Equipo completo ✔️</p>'}
+    ${isStudentMe()&&my.members.includes(ME.name)?`<div class="callout c-warn" style="margin-top:14px"><span class="ic">🔁</span><div><b>¿Te equivocaste de equipo?</b> Date de baja aquí y entra con la clave de tu equipo correcto. El trabajo del equipo no se borra.<div class="row" style="margin-top:8px"><button class="btn or sm" data-switch="1">🔁 Cambiarme de equipo</button><button class="btn gh sm" data-leave="1">🚪 Solo darme de baja</button></div></div></div>`:''}
     <div class="callout c-tip" style="margin-top:14px"><span class="ic">📖</span><div>Su caso asignado es <b>${esc(CASES[my.caseId].full)}</b>. Lo pueden revisar en <a href="#caso">📖 El caso</a>.</div></div>
    </div>`:`<div class="card" style="text-align:center"><div style="font-size:54px">🔑</div><h2>Entra con la clave de tu equipo</h2><p class="muted">Tu profesora te da la clave (por ejemplo, LID1-XXXX o ADM1-XXXX).</p><button class="btn or big" onclick="openWho()">🔑 Escribir clave</button></div>`}
   <div class="card"><h2>🎭 Roles sugeridos</h2><div class="grid g3">${ROLES.map(r=>`<div class="callout c-dummy" style="margin:0"><div>${esc(r)}</div></div>`).join('')}</div></div>
@@ -1968,9 +1973,12 @@ function teamCard(t,tch){
    <div class="row" style="margin-top:8px">${ME.team===t.id?'<span class="tag" style="background:#fff4e6;color:#c2410c">👉 Tu equipo</span>':''}${tch?`<button class="btn gh sm" data-view="${t.id}">👀 Ver su trabajo</button>`:''}</div></div>`;
 }
 after.equipos=()=>{
-  const ra=$('#regAdd'); if(ra){const go=()=>{const n=$('#regName').value;const err=registerMember(ME.team,n);if(err)return toast(err);const nm=n.trim().replace(/\s+/g,' ');if(!isStudentMe()){ME.name=nm;lsSet(LS_ME,ME);}toast(`✔️ ${nm} registrado`);render();};ra.onclick=go;$('#regName').onkeydown=e=>{if(e.key==='Enter')go()};}
+  const ra=$('#regAdd'); if(ra){const go=()=>{const n=$('#regName').value;const ot=teamOfName(S.config.teams.flatMap(t=>t.members).find(m=>m.toLowerCase()===normName(n).toLowerCase()));if(ot&&ot.id!==ME.team){const nm=ot.members.find(m=>m.toLowerCase()===normName(n).toLowerCase());openConfirm(`${nm} ya está inscrito en ${ot.emoji} ${ot.name}. ¿Cambiarlo a este equipo?`,()=>{const e2=moveMember(nm,ME.team);if(e2)return toast(e2);toast('↪️ '+nm+' se cambió de equipo');render();});return;}const err=registerMember(ME.team,n);if(err)return toast(err);const nm=n.trim().replace(/\s+/g,' ');if(!isStudentMe()){ME.name=nm;lsSet(LS_ME,ME);}toast(`✔️ ${nm} registrado`);render();};ra.onclick=go;$('#regName').onkeydown=e=>{if(e.key==='Enter')go()};}
   $('#main').onclick=e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.view&&isTeacher()){ME={team:b.dataset.view,name:'Docente'};lsSet(LS_ME,ME);subscribeTeam(ME.team);location.hash='#canvas';}
+    if(b.dataset.leave)leaveMine(false);
+    if(b.dataset.switch)leaveMine(true);
+    if(b.dataset.unreg&&ME.team){const nm=b.dataset.unreg,tid=ME.team;openConfirm(`¿Quitar a ${nm} de tu equipo? Úsalo solo si se registró por error (queda anotado en la bitácora).`,()=>{leaveTeam(tid,nm,'lo quitó '+(ME.name||'un integrante'));toast('✖ Se quitó a '+nm);render();});}
     if(b.dataset.rm&&isTeacher()){openConfirm(`¿Quitar a ${b.dataset.rm} del equipo?`,()=>{const t=teamById(b.dataset.from);t.members=t.members.filter(m=>m!==b.dataset.rm);saveConfig();addLog(t.id,`✖ ${b.dataset.rm} salió del equipo (docente)`);render();});}
   };
   $('#main').onchange=e=>{const el=e.target;
@@ -2192,9 +2200,9 @@ function modal(html,onMount){ const r=$('#modalRoot'); r.innerHTML=`<div class="
 function closeModal(){ $('#modalRoot').innerHTML=''; }
 function openConfirm(msg,ok){ modal(`<h2>¿Seguro?</h2><p>${esc(msg)}</p><div class="row"><button class="btn bad" id="mOk">Sí, continuar</button><button class="btn gh" id="mNo">Cancelar</button></div>`,r=>{r.querySelector('#mOk').onclick=()=>{closeModal();ok()};r.querySelector('#mNo').onclick=closeModal;}); }
 function openEdit(val,cb,title){ modal(`<h2>${esc(title||'Editar')}</h2><textarea id="mTxt" style="min-height:80px">${esc(val)}</textarea><div class="row" style="margin-top:10px"><button class="btn or" id="mOk">Guardar</button><button class="btn gh" id="mNo">Cancelar</button></div>`,r=>{const t=r.querySelector('#mTxt');t.focus();r.querySelector('#mOk').onclick=()=>{closeModal();cb(t.value)};r.querySelector('#mNo').onclick=closeModal;}); }
-function openWho(){
+function openWho(forceKey){
   let step='key', team=ME.team&&teamById(ME.team)||null;
-  if(team) step='name';
+  if(team&&!forceKey) step='name';
   const finish=(tid,nm)=>{ME={team:tid,name:nm};lsSet(LS_ME,ME);subscribeTeam(tid);closeModal();toast(`¡Hola, ${nm.split(' ')[0]}! 🐝`);if(VIEW==='inicio')location.hash='#equipos';else render();};
   const draw=()=>{
    if(step==='key') return `<h2>🔑 Entra con la clave de tu equipo</h2><p class="muted">Tu profesora te da la clave. Ejemplo: <b>LID1-XXXX</b> (Liderazgo) o <b>ADM1-XXXX</b> (Administración).</p>
@@ -2204,15 +2212,17 @@ function openWho(){
     <label class="f">¿Quién eres?</label>
     ${team.members.length?`<div class="grid g2" style="gap:8px">${team.members.map(m=>`<button class="btn gh" style="justify-content:flex-start" data-wn="${esc(m)}">👤 ${esc(m)}</button>`).join('')}</div>`:'<p class="muted">Todavía nadie se ha registrado en este equipo.</p>'}
     ${team.members.length<st.maxTeam?`<label class="f" style="margin-top:14px">📝 ¿Es tu primera vez? Registra tu nombre completo</label><div class="row" style="flex-wrap:nowrap"><input type="text" id="wNew" placeholder="Nombre y apellidos"><button class="btn or" data-wnew="1">Registrarme</button></div>`:'<p class="tag">Equipo completo ✔️</p>'}
-    <div class="row" style="margin-top:14px"><button class="btn gh sm" data-wother="1">🔑 Usar otra clave</button></div>`;};
+    <div class="row" style="margin-top:14px"><button class="btn gh sm" data-wother="1">🔑 Usar otra clave (otro equipo)</button>${isStudentMe()&&team.members.includes(ME.name)?`<button class="btn gh sm" data-wleave="1">🚪 Darme de baja de este equipo</button>`:''}</div>
+    <p class="muted" style="font-size:.85rem;margin-top:8px">¿Te inscribiste en el equipo equivocado? Escribe la clave de tu equipo correcto y registra tu mismo nombre: te preguntaremos si quieres cambiarte.</p>`;};
   modal(draw(),r=>{const M=r.querySelector('.modal');const redraw=()=>{M.innerHTML=draw();const i=M.querySelector('#wKey')||M.querySelector('#wNew');if(i&&step==='key')i.focus();};redraw();
    const tryKey=async()=>{const t=await teamByKey(M.querySelector('#wKey').value);if(!t){toast('Clave incorrecta. Revísala con tu profesora.');return;}team=t;step='name';redraw();};
-   const tryNew=()=>{const v=M.querySelector('#wNew').value;const err=registerMember(team.id,v);if(err)return toast(err);finish(team.id,v.trim().replace(/\s+/g,' '));};
+   const tryNew=()=>{const v=M.querySelector('#wNew').value;const nv=normName(v).toLowerCase();const ot=S.config.teams.find(t=>t.id!==team.id&&t.members.some(m=>m.toLowerCase()===nv));if(ot){const nm=ot.members.find(m=>m.toLowerCase()===nv);const tgt=team;closeModal();openConfirm(`${nm} ya está inscrito en ${ot.emoji} ${ot.name}. ¿Te equivocaste? Si confirmas, te damos de baja de ese equipo y te inscribimos en ${tgt.emoji} ${tgt.name}.`,()=>{const e2=moveMember(nm,tgt.id);if(e2)return toast(e2);finish(tgt.id,nm);});return;}const err=registerMember(team.id,v);if(err)return toast(err);finish(team.id,v.trim().replace(/\s+/g,' '));};
    M.onclick=e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.wkey)tryKey();
     if(b.dataset.wn)finish(team.id,b.dataset.wn);
     if(b.dataset.wnew)tryNew();
     if(b.dataset.wother){team=null;step='key';redraw();}
+    if(b.dataset.wleave){closeModal();leaveMine(true);}
    };
    M.onkeydown=e=>{if(e.key!=='Enter')return;e.preventDefault();if(step==='key')tryKey();else if(e.target.id==='wNew')tryNew();};
   });
