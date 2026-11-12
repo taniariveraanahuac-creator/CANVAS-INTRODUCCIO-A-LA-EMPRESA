@@ -294,6 +294,16 @@ ul.tight{margin:4px 0 10px;padding-left:20px}ul.tight li{margin:2px 0}
 .kline{padding:6px 2px;font-size:.98rem;border-bottom:1px dashed #f5e3a0}
 .kline:last-child{border-bottom:0}
 .kline.ok{color:#166534}.kline.warn{color:#92400e}.kline.bad{color:#9f1239}
+
+.walk{margin-top:14px}
+.wk{display:flex;gap:14px;position:relative;padding-bottom:16px}
+.wk:not(:last-child)::before{content:"";position:absolute;left:23px;top:50px;bottom:0;width:3px;background:#fbd5a8}
+.wkn{flex:none;width:48px;height:48px;border-radius:50%;background:var(--orange);color:#fff;font:800 1.4rem 'Baloo 2',sans-serif;display:grid;place-items:center;z-index:1}
+.wkb{flex:1;min-width:0;background:#fff;border:2px solid var(--line);border-radius:18px;padding:14px 16px}
+.wkg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:8px 0}
+@media (max-width:800px){.wkg{grid-template-columns:1fr}}
+.wkdone{background:#ecfdf3;border-radius:12px;padding:8px 10px;font-size:.95rem;margin-bottom:8px}
+.wkex{background:#fffaf2;border:1px dashed #fbd5a8;border-radius:12px;padding:8px 10px;font-size:.95rem}
 </style>
 </head>
 <body>
@@ -320,7 +330,7 @@ const DEFAULT_SESSIONS=()=>[
  {id:'s1',date:'2026-11-12',time:'',title:'Sesión 1 · Caso + bloques 1 a 4 (el cliente)',detail:'Lectura del caso real del equipo, tutorial y llenado de Propuesta de valor, Segmentos, Canales y Relaciones.',deadline:false},
  {id:'s2',date:'2026-11-17',time:'',title:'Sesión 2 · Bloques 5 a 9 (operación y finanzas)',detail:'Ingresos, Recursos, Actividades, Aliados y Costos. Llenar la pestaña Números.',deadline:false},
  {id:'s3',date:'2026-11-19',time:'',title:'Sesión 3 · Patrón, innovación y revisión',detail:'Patrón de modelo de negocio, tipología de Chesbrough, revisión de coherencia y autoevaluación con rúbrica.',deadline:false},
- {id:'s4',date:'2026-11-20',time:'23:59',title:'📌 Entrega del reporte final',detail:'Guardar versión final del reporte (pestaña Reporte → “Guardar versión”).',deadline:true}
+ {id:'s4',date:'2026-11-20',time:'23:59',title:'📌 Entrega en Brightspace · Actividad 10',detail:'Guardar la versión “Entrega final”, descargar el reporte en PDF y subirlo a Brightspace → Actividad 10.',deadline:true}
 ];
 const DEFAULT_CONFIG=()=>normalizeConfig({
   version:1,
@@ -1024,7 +1034,52 @@ const RUBRIC=[
  {id:'r7',n:'Trabajo en equipo y bitácora',w:10,lv:['Todos participan (bitácora y responsables por bloque); ideas propias además de las propuestas.','Participa la mayoría; algunas ideas propias.','Participación desigual; casi todo viene de las propuestas.','Trabajo de una sola persona.']}
 ];
 const LVL=[{n:'Excelente',p:1,cl:'lvl4'},{n:'Bueno',p:.8,cl:'lvl3'},{n:'Suficiente',p:.6,cl:'lvl2'},{n:'Insuficiente',p:.3,cl:'lvl1'}];
-const TEACHER_PIN='Kab2026';
+const TEACHER_PIN_HASH='21ac3522552b61c38dad1497dacb8013466a10a7d7a7bb60476481507c393971';
+const SYNC_URL=''; // URL del Apps Script (o en sync.json)
+/* ---------- Guardado compartido en Google Sheets (para GitHub Pages) ----------
+   Imita la parte de la base de datos que usa la app: doc().set/get/delete/onSnapshot,
+   collection().doc()/orderBy()/limit()/get()/onSnapshot(). Los datos viven en una
+   Hoja de Google a través de un Apps Script publicado como aplicación web. */
+function makeSheetDB(url){
+  const cache=new Map(); const subs=new Set(); let since=0, ready=false, timer=null, failing=0;
+  const segs=p=>p.split('/');
+  const snapDoc=(path)=>{const c=cache.get(path);return{id:segs(path).pop(),exists:!!c,data:()=>c?JSON.parse(JSON.stringify(c.data)):undefined,metadata:{fromCache:!ready,hasPendingWrites:!!(c&&c.pending)}}};
+  const inCol=(col,p)=>p.startsWith(col+'/')&&p.slice(col.length+1).indexOf('/')<0;
+  function runQuery(q){let docs=[...cache.keys()].filter(p=>inCol(q.col,p)).map(snapDoc);
+    if(q.order){const f=q.order,d=q.dir==='desc'?-1:1;docs.sort((a,b)=>{const x=a.data()[f],y=b.data()[f];return (x>y?1:x<y?-1:0)*d});}else docs.sort((a,b)=>a.id<b.id?-1:1);
+    if(q.lim)docs=docs.slice(0,q.lim);return{docs,size:docs.length,empty:!docs.length,docChanges:()=>[],metadata:{fromCache:!ready,hasPendingWrites:false}}}
+  const sig=s=>s.docs?s.docs.map(d=>d.id+':'+((cache.get(s._p+'/'+d.id)||{}).ts||0)).join('|'):String((cache.get(s._p)||{}).ts||'x');
+  function notify(force){subs.forEach(s=>{let snap;if(s.q){snap=runQuery(s.q);snap._p=s.q.col;}else{snap=snapDoc(s.path);snap._p=s.path;}const g=(s.q?'':(snap.exists?'1':'0'))+sig(snap);if(force||g!==s.last){s.last=g;try{s.cb(snap)}catch(e){console.warn(e)}}})}
+  async function pull(){
+    try{const r=await fetch(url+(url.includes('?')?'&':'?')+'since='+since+'&t='+Date.now());const j=await r.json();if(!j.ok)throw new Error(j.error||'error');
+      let mx=since;(j.docs||[]).forEach(d=>{const ts=+d.ts;const loc=cache.get(d.path);if(loc&&loc.pending&&loc.ts>ts)return;if(d.deleted)cache.delete(d.path);else{try{cache.set(d.path,{data:JSON.parse(d.json),ts})}catch(e){}}if(ts>mx)mx=ts;});
+      since=mx;const first=!ready;ready=true;failing=0;notify(first);
+    }catch(e){failing++;if(!ready&&failing>=2){ready=true;notify(true);}}
+    clearTimeout(timer);timer=setTimeout(pull,document.hidden?60000:15000);
+  }
+  async function write(op,path,data){
+    const ts=Date.now();if(op==='del')cache.delete(path);else cache.set(path,{data:JSON.parse(JSON.stringify(data)),ts,pending:true});notify();
+    const body=JSON.stringify({op,path,json:op==='del'?'':JSON.stringify(data)});
+    let lastErr;for(let i=0;i<2;i++){try{const r=await fetch(url,{method:'POST',body});const j=await r.json();if(!j.ok)throw new Error(j.error||'error');const c=cache.get(path);if(c){c.pending=false;c.ts=j.ts;}return;}catch(e){lastErr=e;await new Promise(r=>setTimeout(r,800+Math.random()*900));}}
+    throw {code:'unavailable',message:String(lastErr&&lastErr.message||lastErr)};
+  }
+  const whenReady=()=>new Promise(res=>{if(ready)return res();const t=setInterval(()=>{if(ready){clearInterval(t);res();}},150);});
+  function docRef(path){return{id:segs(path).pop(),path,
+    set:d=>write('set',path,d),update:d=>{const c=cache.get(path);return write('set',path,Object.assign({},c?c.data:{},d))},delete:()=>write('del',path),
+    get:async()=>{await whenReady();return snapDoc(path)},
+    onSnapshot:(cb,err)=>{const s={path,cb,err,last:null};subs.add(s);if(ready){s.last=null;notify();}return()=>subs.delete(s)},
+    collection:c=>colRef(path+'/'+c)}}
+  function query(q){return{
+    where(){return query(q)},orderBy:(f,d)=>query({...q,order:f,dir:d}),limit:n=>query({...q,lim:n}),
+    get:async()=>{await whenReady();const s=runQuery(q);return s},
+    onSnapshot:(cb,err)=>{const s={q,cb,err,last:null};subs.add(s);if(ready)notify();return()=>subs.delete(s)}}}
+  function colRef(col){return Object.assign(query({col}),{path:col,doc:id=>docRef(col+'/'+(id||uid())),add:async d=>{const r=docRef(col+'/'+uid());await r.set(d);return r}})}
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){clearTimeout(timer);pull();}});
+  pull();
+  return{doc:docRef,collection:colRef,_sheet:true};
+}
+async function sha256hex(t){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return ''}}
+
 
 /* =========================================================
    UTILIDADES
@@ -1127,9 +1182,15 @@ function maybeAutoSnapshot(tid){
 /* ---- nube: conexión y suscripciones ---- */
 async function initCloud(){
   updateStatus();
-  if(!window.claude||typeof window.claude.use!=='function'){ updateStatus(); return; }
-  try{ CLOUD.db=await window.claude.use('db'); }catch(e){CLOUD.db=null}
-  try{ CLOUD.user=await window.claude.use('user'); }catch(e){CLOUD.user=null}
+  if(window.claude&&typeof window.claude.use==='function'){
+    try{ CLOUD.db=await window.claude.use('db'); }catch(e){CLOUD.db=null}
+    try{ CLOUD.user=await window.claude.use('user'); }catch(e){CLOUD.user=null}
+  }
+  if(!CLOUD.db){
+    let url=SYNC_URL;
+    if(!url&&/^https?:/.test(location.protocol)){ try{ const r=await fetch('sync.json?t='+Date.now(),{cache:'no-store'}); if(r.ok){ const j=await r.json(); url=(j&&j.url)||''; } }catch(e){} }
+    if(url){ CLOUD.db=makeSheetDB(url); CLOUD.sheet=true; }
+  }
   if(!CLOUD.db){ updateStatus(); return; }
   CLOUD.on=true;
   try{ CLOUD.owner=!!(CLOUD.user&&await CLOUD.user.isOwner()); }catch(e){}
@@ -1231,7 +1292,7 @@ function coach(tid,k){
    RENDER GENERAL
    ========================================================= */
 let VIEW='inicio', SELB='b1', PTAB='tuto';
-const VIEWS={inicio:vInicio,aprende:vAprende,caso:vCaso,canvas:vCanvas,numeros:vNumeros,encuesta:vEncuesta,patron:vPatron,equipos:vEquipos,calendario:vCalendario,rubrica:vRubrica,reporte:vReporte,docente:vDocente};
+const VIEWS={inicio:vInicio,aprende:vAprende,ejemplo:vEjemplo,caso:vCaso,canvas:vCanvas,numeros:vNumeros,encuesta:vEncuesta,patron:vPatron,equipos:vEquipos,calendario:vCalendario,rubrica:vRubrica,reporte:vReporte,docente:vDocente};
 function route(){ const h=(location.hash||'').replace('#',''); VIEW=VIEWS[h]?h:'inicio'; render(); window.scrollTo(0,0); }
 function render(){
   if(ME.team&&!teamById(ME.team)){ME.team=null;lsSet(LS_ME,ME);}
@@ -1269,7 +1330,7 @@ const STEPS=[
  {v:'canvas',t:'Canvas',ic:'🧩',d:'Llenen los 9 bloques con ideas propias y datos.'},
  {v:'numeros',t:'Números',ic:'🧮',d:'¿El modelo deja ganancia? Margen y punto de equilibrio.'},
  {v:'patron',t:'Patrón',ic:'🚀',d:'Elijan su fórmula de ingresos y escriban la conclusión.'},
- {v:'reporte',t:'Reporte',ic:'📄',d:'Se arma solo. Guarden la versión final para entregar.'}
+ {v:'reporte',t:'Reporte',ic:'📄',d:'Se arma solo. Guarden la versión final y súbanla a Brightspace (Actividad 10).'}
 ];
 const EXTRA=[{v:'rubrica',t:'Rúbrica',ic:'📏'},{v:'calendario',t:'Calendario',ic:'📅'},{v:'docente',t:'Docente',ic:'🍎'}];
 function stepDone(v){
@@ -1332,8 +1393,9 @@ function vInicio(){
    <span class="tag" style="background:#ffffff22;color:#fff">ADM1401 · Temas 9 y 10 · Modelo de negocio</span>
    <h1>Aprende a usar el Modelo Canvas con una empresa real de la región</h1>
    <p>Sigue la ruta de 8 pasos. En cada paso hay instrucciones, ejemplos resueltos y la ayuda de <b>Kab</b>, la abeja coach. Todo se guarda solo.</p>
-   <div class="row" style="margin-top:12px"><a class="btn or big" href="#${n.v}">👉 ${tm?'Continuar':'Empezar'}: ${n.ic} ${n.t}</a><button class="btn gh big" onclick="openTour(0)">🎓 Tutorial de 1 minuto</button></div></section>
-  <h2>🗺️ Tu ruta</h2>
+   <div class="row" style="margin-top:12px"><a class="btn or big" href="#${n.v}">👉 ${tm?'Continuar':'Empezar'}: ${n.ic} ${n.t}</a><a class="btn gh big" href="#ejemplo">👀 Ver ejemplo resuelto</a></div></section>
+  ${vWalk()}
+  <h2>🗺️ Tu ruta (se marca ✓ conforme avanzan)</h2>
   <div class="routecards">${STEPS.map((s,i)=>{const d=stepDone(s.v),isN=s.v===n.v;return `<a class="rc ${d?'done':''} ${isN?'next':''}" href="#${s.v}"><div class="rcn">${d?'✓':i+1}</div><div class="rci">${s.ic}</div><b>${s.t}</b><p>${s.d}</p><span class="rcs">${d?'✅ Hecho':isN?'👉 Sigue aquí':'Pendiente'}</span></a>`}).join('')}</div>
   <div class="card"><div class="row" style="justify-content:space-between"><div style="flex:1;min-width:260px"><h2>🧩 ¿Qué es el Canvas en una frase?</h2><p style="font-size:1.15rem">Es <b>una sola hoja con 9 bloques</b> que explica cómo un negocio <b>crea</b> valor (lo que ofrece), lo <b>entrega</b> (a quién y cómo) y lo <b>cobra</b> (cuánto gana y cuánto gasta).</p></div><a class="btn big" href="#aprende">🎓 Aprende en 10 minutos</a></div></div>`;
 }
@@ -1375,6 +1437,82 @@ after.aprende=()=>{
     if(b.id==='qzAgain'){QZ={i:0,score:0,picked:null};render();$('#quiz').scrollIntoView({block:'start'});}
   };
 };
+
+/* ---------- TUTORIAL DE PRINCIPIO A FIN + EJEMPLO RESUELTO ---------- */
+const WALK=[
+ {ic:'👥',t:'Formen su equipo',v:'equipos',who:'Todos',time:'10 min',
+  doit:['Cada quien toca “¿Quién eres?”, elige su grupo y su nombre.','Se unen al mismo equipo (máximo 5).','Repartan roles: Coordinación, Mercado, Finanzas, Operaciones y Relatoría.'],
+  done:'Los 5 aparecen en el mismo equipo y cada uno tiene rol.',
+  ex:'Equipo 1: Ana (Coordinación), Luis (Mercado), Sofía (Finanzas), Raúl (Operaciones), Majo (Relatoría).'},
+ {ic:'🎓',t:'Aprendan el Canvas',v:'aprende',who:'Todos',time:'15 min',
+  doit:['Lean las 5 lecciones de “Aprende”.','Revisen el ejemplo del food truck.','Jueguen “¿En qué bloque va?” hasta sacar 7 de 10.'],
+  done:'El paso 2 aparece con ✓ verde.',
+  ex:'Majo sacó 9/10 y explicó al equipo los 2 bloques que fallaron.'},
+ {ic:'📖',t:'Investiguen su caso real',v:'caso',who:'Todos (cada rol busca datos de sus bloques)',time:'40 min',
+  doit:['Lean la ficha del caso: contexto, datos, problema y reto.','Abran al menos 2 ligas de consulta.','Anoten 5 datos con su fuente y año.'],
+  done:'Tienen al menos 5 datos con fuente y responden las preguntas detonadoras.',
+  ex:'“Doña Lupe vende 40 marquesitas al día (entrevista, 2026)” · “La competencia cobra $60–$85 (visita a 3 puestos, 2026)”.'},
+ {ic:'📊',t:'Apliquen la encuesta',v:'encuesta',who:'Mercado coordina; todos encuestan',time:'1 semana (4 encuestas por persona)',
+  doit:['Revisen el cuestionario que ya viene listo.','Cada integrante aplica 4 encuestas (meta: 20).','Capturen cada respuesta en “✍️ Capturar respuesta”.'],
+  done:'El contador marca 20 de 20 y ven sus gráficas en “📈 Resultados”.',
+  ex:'30 respuestas en el malecón: 63% busca algo típico; 55% pagaría hasta $75.'},
+ {ic:'🧩',t:'Llenen los 9 bloques',v:'canvas',who:'Cada rol es dueño de sus bloques; todos opinan',time:'2 sesiones',
+  doit:['Vayan del bloque 1 al 9.','En cada bloque: elijan propuestas (¡ojo con las trampas!), agreguen una idea propia y justifiquen con un dato.','Usen “➕ Usar en la justificación” para traer datos de su encuesta.'],
+  done:'Los 9 círculos tienen ✓ y Kab dice “¡Bloque listo!”.',
+  ex:'Bloque 2 · “Turistas nacionales que quieren probar algo típico” — Justificación: según nuestra encuesta (n = 30), el 63%…'},
+ {ic:'🧮',t:'Comprueben los números',v:'numeros',who:'Finanzas, con ayuda de todos',time:'30 min',
+  doit:['Pongan precio, costo y unidades de cada fuente de ingreso.','Agreguen costos fijos e inversión.','Escriban qué significan los resultados.'],
+  done:'Ven su utilidad mensual y su punto de equilibrio, y escribieron la interpretación.',
+  ex:'Margen $48 por pieza · utilidad $33,600 al mes · punto de equilibrio: 17 marquesitas al día.'},
+ {ic:'🚀',t:'Elijan su patrón y concluyan',v:'patron',who:'Coordinación, con todos',time:'30 min',
+  doit:['Elijan 1 o 2 patrones de modelo de negocio.','Ubiquen su caso HOY y su META (Chesbrough).','Escriban la conclusión: ¿por qué este modelo y no otro?'],
+  done:'Hay patrón, tipología y una conclusión de al menos 5 líneas.',
+  ex:'Afiliación con hoteles · Tipo 2 → Tipo 4 · “Elegimos este modelo y no un local fijo porque…”.'},
+ {ic:'📏',t:'Autoevalúense con la rúbrica',v:'rubrica',who:'Todos',time:'15 min',
+  doit:['Lean los 7 criterios.','Marquen honestamente el nivel que alcanzaron.','Si algo quedó en “Suficiente”, mejórenlo antes de entregar.'],
+  done:'Su autoevaluación aparece con calificación.',
+  ex:'Se pusieron 8.6 y mejoraron la “Evidencia del caso” antes de entregar.'},
+ {ic:'📤',t:'Entreguen en Brightspace · Actividad 10',v:'reporte',who:'Relatoría sube; todos revisan',time:'15 min',
+  doit:['En “📄 Reporte” toquen 💾 Guardar versión y llámenla “Entrega final”.','Toquen ⬇️ Descargar reporte, ábranlo y guárdenlo como PDF (Ctrl + P → Guardar como PDF).','Suban el PDF en Brightspace → <b>Actividad 10</b>.'],
+  done:'El PDF está en Brightspace, en la Actividad 10, antes de la fecha límite.',
+  ex:'Archivo: ADM1401_Act10_Equipo1_Administracion.pdf'}
+];
+function vWalk(){
+  return `<div class="card" style="border:3px solid var(--orange)"><div class="row" style="justify-content:space-between"><div style="flex:1;min-width:260px"><h2 style="margin:0">🎬 Tutorial: lo que hace cada equipo, de principio a fin</h2><p class="muted" style="margin:4px 0 0">9 pasos. Al final, el reporte se sube a <b>Brightspace → Actividad 10</b>.</p></div><a class="btn or big" href="#ejemplo">👀 Ver el ejemplo completo resuelto</a></div>
+  <div class="walk">${WALK.map((w,i)=>`<div class="wk"><div class="wkn">${i+1}</div><div class="wkb"><div class="row" style="justify-content:space-between;gap:8px"><h3 style="margin:0">${w.ic} ${w.t}</h3><span class="row" style="gap:6px"><span class="tag">👤 ${w.who}</span><span class="tag">⏱️ ${w.time}</span></span></div>
+   <div class="wkg"><div><b>Qué hacen</b><ol class="tight">${w.doit.map(d=>`<li>${d}</li>`).join('')}</ol></div><div><div class="wkdone">✅ <b>Listo cuando:</b> ${w.done}</div><div class="wkex">🌮 <b>Así se ve resuelto:</b> ${esc(w.ex)}</div></div></div>
+   <a class="btn gh sm" href="#${w.v}">Ir a este paso ➡️</a></div></div>`).join('')}</div></div>`;
+}
+const DEMO_SURVEY=[
+ ['¿Qué busca al comprar un postre en la calle?','Probar algo típico',63,30,'b1'],
+ ['¿Cuánto pagaría por una marquesita?','Hasta $75',55,30,'b5'],
+ ['¿Dónde se entera de dónde comer?','Instagram o TikTok',80,30,'b3'],
+ ['Usted es…','Turista nacional',57,30,'b2'],
+ ['Del 1 al 5, ¿volvería si tuviera tarjeta de lealtad?','Promedio 4.3 de 5',null,30,'b4']
+];
+function vEjemplo(){
+  const gridPos={b8:'1/3;grid-row:1/3',b7:'3/5;grid-row:1',b6:'3/5;grid-row:2',b1:'5/7;grid-row:1/3',b4:'7/9;grid-row:1',b3:'7/9;grid-row:2',b2:'9/11;grid-row:1/3',b9:'1/6;grid-row:3',b5:'6/11;grid-row:3'};
+  return `<div class="pagehead"><div><h1>👀 Ejemplo completo resuelto</h1><div class="muted">Así debe verse el reporte que suben a la Actividad 10 (caso inventado para aprender: food truck “Marquesitas Doña Lupe”).</div></div><a class="btn gh" href="#inicio">⬅️ Volver al inicio</a></div>
+  <div class="callout c-warn"><span class="ic">⚠️</span><div>Este ejemplo es para entender el <b>formato y el nivel</b> esperados. Su equipo trabaja un <b>caso real distinto</b>: no copien, ¡inspírense!</div></div>
+  <div class="rep">
+   <div class="rhead"><small>Universidad Anáhuac Cancún · EIN · ADM1401 Introducción a la Empresa · Temas 9 y 10 · Actividad 10</small><h1 style="color:#fff">Reporte de modelo de negocio · Marquesitas Doña Lupe (EJEMPLO)</h1><div>Equipo <b>1️⃣ Equipo 1</b> · Grupo Administración · Avance <b>100%</b></div></div>
+   <h2>👥 Integrantes y roles</h2><table><tr><th>Integrante</th><th>Rol</th><th>Bloques a cargo</th></tr>
+    <tr><td>Ana (ejemplo)</td><td>🧭 Coordinación</td><td>1</td></tr><tr><td>Luis (ejemplo)</td><td>🔎 Mercado</td><td>2, 3, 4</td></tr><tr><td>Sofía (ejemplo)</td><td>💰 Finanzas</td><td>5, 9</td></tr><tr><td>Raúl (ejemplo)</td><td>⚙️ Operaciones</td><td>6, 7, 8</td></tr><tr><td>Majo (ejemplo)</td><td>📝 Relatoría</td><td>Reporte</td></tr></table>
+   <h2>🧩 Business Model Canvas</h2><div class="rgrid">${BLOCKS.map(b=>`<div class="rb" style="grid-column:${gridPos[b.k]};border-top-color:${b.hex}"><b>${b.n}. ${b.icon} ${esc(b.name)}</b><ul>${FT[b.k].items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}</div>
+   <h2>📝 Justificación por bloque</h2>${BLOCKS.map(b=>`<p><b style="color:${b.hex}">${b.n}. ${b.icon} ${esc(b.name)}:</b> ${esc(FT[b.k].just)}</p>`).join('')}
+   <h2>📊 Encuesta del equipo (30 respuestas)</h2><table><tr><th>Pregunta</th><th>Bloque</th><th>Resultado principal</th></tr>${DEMO_SURVEY.map(r=>`<tr><td>${esc(r[0])}</td><td>${BMAP[r[4]].n}</td><td>${esc(r[1])}${r[2]!=null?`: ${r[2]}%`:''} (n = ${r[3]})</td></tr>`).join('')}</table>
+   <h2>🧮 Números</h2><table><tr><th>Fuente</th><th>Precio</th><th>Costo var.</th><th>Margen</th><th>Unid./mes</th><th>Ingreso/mes</th></tr><tr><td>Marquesita</td><td>$70</td><td>$22</td><td>$48 (69%)</td><td>1,200</td><td>$84,000</td></tr></table>
+   <div style="margin-top:6px"><span class="kpi">Ingresos/mes $84,000</span><span class="kpi">Costos fijos $24,000</span><span class="kpi">Utilidad/mes $33,600</span><span class="kpi">Punto de equilibrio 500 piezas/mes (≈ 17 al día)</span><span class="kpi">Inversión $150,000 · recuperación 4.5 meses</span></div>
+   <p><b>Interpretación:</b> con 40 ventas diarias superamos por mucho el punto de equilibrio (17 al día). El mayor riesgo es la temporada de lluvias; por eso proponemos paquetes para fiestas, que no dependen del clima.</p>
+   <h2>🚀 Patrón e innovación</h2><p><b>Patrón:</b> Afiliación. <b>Por qué:</b> los hoteles cercanos recomiendan el food truck a sus huéspedes y a cambio reciben 10% de descuento para ellos; así llegamos a turistas sin pagar publicidad.</p><p><b>Chesbrough:</b> hoy Tipo 2 (Diferenciado) → meta Tipo 4 (Externamente consciente): abrirse a aliados como hoteles y organizadores de eventos.</p><p><b>Autochequeo de coherencia:</b> 6 de 6 ✔️</p>
+   <h2>🎯 Conclusión: ¿por qué este modelo y no otro?</h2><p>Elegimos un food truck con afiliación a hoteles y no un local fijo porque la renta en la zona hotelera duplicaría nuestros costos fijos y nos obligaría a vender más de 35 marquesitas al día solo para no perder. El camión nos deja ir a donde está el cliente (malecón, ferias) y la encuesta muestra que el 80% de los jóvenes nos encontraría por redes. Los números confirman que el modelo deja $33,600 al mes y recupera la inversión en menos de 5 meses.</p>
+   <h2>📏 Rúbrica (autoevaluación)</h2><table><tr><th>Criterio</th><th>Peso</th><th>Nivel</th></tr>${RUBRIC.map((r,i)=>`<tr><td>${esc(r.n)}</td><td>${r.w}</td><td>${i===1||i===5?'Bueno':'Excelente'}</td></tr>`).join('')}<tr><th colspan="2">Calificación</th><th>9.4</th></tr></table>
+  </div>
+  <div class="card" style="margin-top:16px;border:3px solid var(--orange)"><h2>📤 Y al final: súbanlo a la Actividad 10</h2>${uploadSteps()}</div>`;
+}
+function uploadSteps(){
+  return `<ol class="steps"><li>En <a href="#reporte">📄 Reporte</a> toquen <b>💾 Guardar versión</b> y nómbrenla <b>“Entrega final”</b>.</li><li>Toquen <b>⬇️ Descargar reporte</b> y abran el archivo descargado.</li><li>Presionen <b>Ctrl + P</b> (en Mac: <b>Cmd + P</b>) → <b>Guardar como PDF</b>.</li><li>Nombren el archivo así: <b>ADM1401_Act10_Equipo#_Grupo.pdf</b>.</li><li>Entren a <b>Brightspace → Actividad 10</b> y suban el PDF (lo sube Relatoría; todos lo revisan antes).</li></ol>`;
+}
 
 function miniCanvas(map){
   return `<div class="board" style="grid-template-rows:auto auto auto">${BLOCKS.map(b=>`<div class="blk a-${b.k}" style="--c:${b.c};cursor:default"><h4><span class="num">${b.n}</span>${b.icon} ${b.name}</h4><ul>${(map[b.k]||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div>`;
@@ -1866,7 +2004,7 @@ function reportBody(tid,snap,meta){
   const g1=se?gradeOf(se):null, g2=gr?gradeOf(gr.levels):null;
   const t=T(tid);
   return `<div class="rep">
-   <div class="rhead"><small>Universidad Anáhuac Cancún · Escuela Internacional de Negocios · ADM1401 Introducción a la Empresa · Temas 9 y 10</small><h1 style="color:#fff">Reporte de modelo de negocio · ${esc(CASES[caseIdOf(tid)].full)}</h1><div>Equipo <b>${esc(tm.emoji+' '+tm.name)}</b> · ${esc(g.name)} · Avance <b>${prog}%</b> · ${meta&&meta.ts?'Versión del '+fmtDT(meta.ts):'Generado el '+fmtDT(Date.now())}</div></div>
+   <div class="rhead"><small>Universidad Anáhuac Cancún · Escuela Internacional de Negocios · ADM1401 Introducción a la Empresa · Temas 9 y 10 · Actividad 10</small><h1 style="color:#fff">Reporte de modelo de negocio · ${esc(CASES[caseIdOf(tid)].full)}</h1><div>Equipo <b>${esc(tm.emoji+' '+tm.name)}</b> · ${esc(g.name)} · Avance <b>${prog}%</b> · ${meta&&meta.ts?'Versión del '+fmtDT(meta.ts):'Generado el '+fmtDT(Date.now())}</div></div>
    <h2>👥 Integrantes y roles</h2><table><tr><th>Integrante</th><th>Rol</th><th>Bloques a cargo</th></tr>${members.map(m=>`<tr><td>${esc(m)}</td><td>${esc(roles[m]||'—')}</td><td>${BLOCKS.filter(b=>B[b.k]&&B[b.k].owner===m).map(b=>b.n).join(', ')||'—'}</td></tr>`).join('')}</table>
    <h2>🧩 Business Model Canvas</h2><div class="rgrid">${BLOCKS.map(b=>`<div class="rb" style="grid-column:${gridPos[b.k]};border-top-color:${b.hex}"><b>${b.n}. ${b.icon} ${esc(b.name)}</b><ul>${(B[b.k]?.items||[]).map(i=>`<li>${esc(i.t)}</li>`).join('')||'<li style="color:#9aa0b8">(vacío)</li>'}</ul></div>`).join('')}</div>
    <h2>📝 Detalle y justificación por bloque</h2>${BLOCKS.map(b=>{const d=B[b.k]||{};return `<h3 style="color:${b.hex};margin-bottom:2px">${b.n}. ${b.icon} ${esc(b.name)} <span class="src">${sc(b.k)}%</span></h3><div style="font-size:.85rem;color:#5d6480">Responsable: ${esc(d.owner||'—')}</div><ul>${(d.items||[]).map(i=>`<li>${esc(i.t)}<span class="src">${i.src==='prop'?'propuesta':'idea propia'}</span></li>`).join('')||'<li>(sin elementos)</li>'}</ul><p><b>Justificación:</b> ${esc(d.just||'—')}</p>`}).join('')}
@@ -1888,6 +2026,7 @@ function vReporte(){
   return `<div class="pagehead"><div><h1>📄 Reporte automático</h1><div class="muted">Se arma solo con todo lo que llenaron</div></div></div>
   ${howTo(['Revisen el reporte: ¿falta algún bloque?','Toquen 💾 Guardar versión (ej. “Entrega final”).','Descárguenlo e imprímanlo como PDF si lo piden.'])}
   ${helpBox('¿Cómo funciona el reporte?',`<ul><li>Se arma <b>solo</b> con lo que el equipo llena en Canvas, Números, Patrón y Rúbrica.</li><li>Cada cambio se guarda automáticamente; además se crea un <b>respaldo automático</b> cada 10 minutos de trabajo.</li><li>Antes de la entrega, toquen <b>💾 Guardar versión</b> y pónganle nombre (ej. “Entrega final”).</li><li><b>⬇️ Descargar</b> genera un archivo que pueden abrir e imprimir como PDF.</li><li><b>Exportar respaldo</b> sirve para pasar el trabajo a otra computadora o enviarlo a la docente.</li></ul>`)}
+  <div class="card" style="border:3px solid var(--orange)"><div class="row" style="justify-content:space-between"><h2 style="margin:0">📤 Entrega en Brightspace · Actividad 10</h2><a class="btn gh sm" href="#ejemplo">👀 Ver cómo debe verse</a></div>${uploadSteps()}</div>
   <div class="card"><div class="row"><button class="btn or" id="saveV">💾 Guardar versión</button><button class="btn" id="dlRep">⬇️ Descargar reporte</button><button class="btn gh" id="cpRep">📋 Copiar texto</button><button class="btn gh" id="expB">📤 Exportar respaldo</button><button class="btn gh" id="impB">📥 Importar respaldo</button></div></div>
   <div class="split" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr)">
    <div id="repBox">${v?`<div class="callout c-warn"><span class="ic">🕓</span><div>Estás viendo la versión del <b>${fmtDT(v.ts)}</b> (${esc(v.label||'')}). <button class="btn sm" id="backLive">Volver al reporte actual</button> <button class="btn bad sm" id="restore">♻️ Restaurar esta versión</button></div></div>`+reportBody(ME.team,v.snap,v):reportBody(ME.team)}</div>
@@ -1942,7 +2081,7 @@ async function refreshAllFromCloud(){
   lsSet(LS,S); if(VIEW==='docente'){$('#overview').innerHTML=overviewTable();} toast('✔️ Avance actualizado');
 }
 after.docente=()=>{
-  if(!isTeacher()){ $('#pinOk').onclick=()=>{ if($('#pin').value===TEACHER_PIN){teacherPinOk=true;try{sessionStorage.setItem('canvaslab-pin','1')}catch(e){};render();} else toast('Clave incorrecta'); }; $('#pin').onkeydown=e=>{if(e.key==='Enter')$('#pinOk').click()}; return; }
+  if(!isTeacher()){ $('#pinOk').onclick=()=>{ sha256hex($('#pin').value.trim()).then(h=>{if(h&&h===TEACHER_PIN_HASH){teacherPinOk=true;try{sessionStorage.setItem('canvaslab-pin','1')}catch(e){};render();} else toast('Clave incorrecta');}); }; $('#pin').onkeydown=e=>{if(e.key==='Enter')$('#pinOk').click()}; return; }
   if(CLOUD.on && !after.docente._loaded){after.docente._loaded=true;refreshAllFromCloud();}
   const ensure=()=>{S.grades[DOCT]=S.grades[DOCT]||{levels:{},comments:{},general:'',updatedAt:0};return S.grades[DOCT];};
   $('#main').onclick=e=>{const b=e.target.closest('button,[data-gr],[data-openrep]');if(!b)return;
@@ -2035,7 +2174,7 @@ const TOUR=[
  {i:'🧩',t:'3. Llena el Canvas en orden 1 → 9',d:'Toca un bloque: a la izquierda APRENDES (explicación y ejemplo resuelto de un food truck) y a la derecha lo HACES con tu equipo en 4 pasos. Kab, la abeja, te revisa en vivo.'},
  {i:'✨',t:'4. Ideas propias + justificación',d:'Las propuestas ayudan a arrancar, pero la rúbrica premia las ideas propias del equipo y las justificaciones con datos. Asignen un responsable por bloque.'},
  {i:'🧮',t:'5. Números y patrón',d:'En “Números” comprueban si el modelo deja ganancia (margen, punto de equilibrio). En “Patrón e innovación” eligen su fórmula de ingresos y concluyen por qué ese modelo.'},
- {i:'💾',t:'6. Todo se guarda solo',d:'Cada cambio se guarda al instante y hay respaldos automáticos. Si cierras a la mitad, al volver sigues donde te quedaste. Antes de entregar: Reporte → “Guardar versión”.'}
+ {i:'💾',t:'6. Todo se guarda solo',d:'Cada cambio se guarda al instante y hay respaldos automáticos. Si cierras a la mitad, al volver sigues donde te quedaste. Al final: guarden la versión “Entrega final”, descarguen el PDF y súbanlo a Brightspace → Actividad 10.'}
 ];
 function openTour(i){ i=i||0; const s=TOUR[i];
   modal(`<div class="tour-ill">${s.i}</div><h2 style="text-align:center">${esc(s.t)}</h2><p style="text-align:center;font-size:1.05rem">${esc(s.d)}</p><div class="dots">${TOUR.map((_,j)=>`<i class="${j===i?'on':''}"></i>`).join('')}</div><div class="row" style="justify-content:space-between"><button class="btn gh" id="tPrev" ${i===0?'disabled':''}>⬅️ Anterior</button><button class="btn gh sm" id="tSkip">Saltar</button>${i<TOUR.length-1?`<button class="btn or" id="tNext">Siguiente ➡️</button>`:`<button class="btn or" id="tEnd">¡Empezar! 🚀</button>`}</div>`,r=>{
