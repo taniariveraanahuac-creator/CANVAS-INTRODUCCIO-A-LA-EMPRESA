@@ -1333,7 +1333,9 @@ const STEPS=[
  {v:'reporte',t:'Reporte',ic:'📄',d:'Se arma solo. Guarden la versión final y súbanla a Brightspace (Actividad 10).'}
 ];
 const EXTRA=[{v:'rubrica',t:'Rúbrica',ic:'📏'},{v:'calendario',t:'Calendario',ic:'📅'},{v:'docente',t:'Docente',ic:'🍎'}];
-function stepDone(v){
+const NO_CHECK=['equipos','caso'];
+function stepDone(v){ return NO_CHECK.includes(v)?false:realDone(v); }
+function realDone(v){
   const tid=ME.team; const t=tid?T(tid):null;
   if(v==='equipos') return !!tid&&!!teamById(tid)&&teamById(tid).members.length>0;
   if(v==='aprende') return (lsGet('canvaslab-quiz')||0)>=7;
@@ -1346,7 +1348,7 @@ function stepDone(v){
   if(v==='reporte') return t.reports.some(r=>!r.auto);
   return false;
 }
-function nextStep(){ return STEPS.find(s=>!stepDone(s.v))||STEPS[STEPS.length-1]; }
+function nextStep(){ return STEPS.find(s=>!realDone(s.v))||STEPS[STEPS.length-1]; }
 function navHTML(){
   return `<a href="#inicio" class="home ${VIEW==='inicio'?'on':''}" title="Inicio">🏠 <span class="xl">Inicio</span></a>
   <div class="stepsnav">${STEPS.map((s,i)=>{const d=stepDone(s.v);return `<a href="#${s.v}" class="st ${VIEW===s.v?'on':''} ${d?'done':''}"><span class="sn">${d?'✓':i+1}</span><span class="stl">${s.t}</span></a>`}).join('')}</div>
@@ -1396,7 +1398,7 @@ function vInicio(){
    <div class="row" style="margin-top:12px"><a class="btn or big" href="#${n.v}">👉 ${tm?'Continuar':'Empezar'}: ${n.ic} ${n.t}</a><a class="btn gh big" href="#ejemplo">👀 Ver ejemplo resuelto</a></div></section>
   ${vWalk()}
   <h2>🗺️ Tu ruta (se marca ✓ conforme avanzan)</h2>
-  <div class="routecards">${STEPS.map((s,i)=>{const d=stepDone(s.v),isN=s.v===n.v;return `<a class="rc ${d?'done':''} ${isN?'next':''}" href="#${s.v}"><div class="rcn">${d?'✓':i+1}</div><div class="rci">${s.ic}</div><b>${s.t}</b><p>${s.d}</p><span class="rcs">${d?'✅ Hecho':isN?'👉 Sigue aquí':'Pendiente'}</span></a>`}).join('')}</div>
+  <div class="routecards">${STEPS.map((s,i)=>{const d=stepDone(s.v),isN=s.v===n.v;return `<a class="rc ${d?'done':''} ${isN?'next':''}" href="#${s.v}"><div class="rcn">${d?'✓':i+1}</div><div class="rci">${s.ic}</div><b>${s.t}</b><p>${s.d}</p><span class="rcs">${d?'✅ Hecho':isN?'👉 Sigue aquí':NO_CHECK.includes(s.v)?'Abrir':'Pendiente'}</span></a>`}).join('')}</div>
   <div class="card"><div class="row" style="justify-content:space-between"><div style="flex:1;min-width:260px"><h2>🧩 ¿Qué es el Canvas en una frase?</h2><p style="font-size:1.15rem">Es <b>una sola hoja con 9 bloques</b> que explica cómo un negocio <b>crea</b> valor (lo que ofrece), lo <b>entrega</b> (a quién y cómo) y lo <b>cobra</b> (cuánto gana y cuánto gasta).</p></div><a class="btn big" href="#aprende">🎓 Aprende en 10 minutos</a></div></div>`;
 }
 function zonesCanvas(){
@@ -1893,7 +1895,7 @@ function teamCard(t,tch){
   return `<div class="card team" style="border-top:7px solid ${C.color}"><div class="row" style="justify-content:space-between"><h3 style="margin:0;font-size:1.35rem">${esc(t.emoji)} ${esc(t.name)}</h3><span class="tag">${t.members.length}/${st.maxTeam} · ${p}%</span></div>
    <div style="margin:6px 0"><span class="tag" style="background:${C.color}22;color:${C.color}">${C.emoji} ${esc(C.name)}</span></div>
    ${tch?(t.members.map(m=>`<div class="member"><span>${esc(m)}</span><span class="row" style="gap:4px;flex-wrap:nowrap"><select data-move="${esc(m)}" data-from="${t.id}" style="width:auto;padding:2px 4px;font-size:.8rem"><option value="">mover…</option>${S.config.teams.filter(x=>x.id!==t.id&&x.group===t.group).map(x=>`<option value="${x.id}">${esc(x.emoji+' '+x.name)}</option>`).join('')}</select><button class="btn gh sm" data-rm="${esc(m)}" data-from="${t.id}" title="Quitar">✖</button></span></div>`).join('')||'<p class="muted" style="font-size:.9rem">Sin registros todavía.</p>'):`<p class="muted" style="font-size:.9rem">${t.members.length?t.members.length+' integrante(s) registrado(s)':'Sin registros todavía'}</p>`}
-   <div class="row" style="margin-top:8px">${ME.team===t.id?'<span class="tag" style="background:#dcfce7;color:#166534">✔️ Tu equipo</span>':''}${tch?`<button class="btn gh sm" data-view="${t.id}">👀 Ver su trabajo</button>`:''}</div></div>`;
+   <div class="row" style="margin-top:8px">${ME.team===t.id?'<span class="tag" style="background:#fff4e6;color:#c2410c">👉 Tu equipo</span>':''}${tch?`<button class="btn gh sm" data-view="${t.id}">👀 Ver su trabajo</button>`:''}</div></div>`;
 }
 after.equipos=()=>{
   const ra=$('#regAdd'); if(ra){const go=()=>{const n=$('#regName').value;const err=registerMember(ME.team,n);if(err)return toast(err);const nm=n.trim().replace(/\s+/g,' ');if(!isStudentMe()){ME.name=nm;lsSet(LS_ME,ME);}toast(`✔️ ${nm} registrado`);render();};ra.onclick=go;$('#regName').onkeydown=e=>{if(e.key==='Enter')go()};}
