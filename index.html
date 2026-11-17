@@ -338,7 +338,7 @@ ul.tight{margin:4px 0 10px;padding-left:20px}ul.tight li{margin:2px 0}
 /* =========================================================
    DATOS BASE
    ========================================================= */
-const ROLES=['🧭 Coordinación (bloque 1 + coherencia)','🔎 Mercado (bloques 2, 3 y 4)','💰 Finanzas (bloques 5 y 9 + Números)','⚙️ Operaciones (bloques 6, 7 y 8)','📝 Relatoría (reporte y bitácora)','🤝 Apoyo / co-analista'];
+const ROLES=['🧭 Coordinación (bloque 1 + coherencia)','🔎 Mercado (bloques 2, 3 y 4)','💰 Finanzas (bloques 5 y 9 + Números)','⚙️ Operaciones (bloques 6, 7 y 8)','📝 Relatoría (reporte y bitácora)','🤝 Apoyo / co-analista','🌐 Participa en todas las áreas'];
 const TEAM_COLORS={L1:'#16a34a',L2:'#0891b2',L3:'#0d9488',A1:'#2563eb',A2:'#ca8a04',A3:'#7c3aed',A4:'#E87722'};
 const DEFAULT_SESSIONS=()=>[
  {id:'s1',date:'2026-11-12',time:'',title:'Sesión 1 · Caso + bloques 1 a 4 (el cliente)',detail:'Lectura del caso real del equipo, tutorial y llenado de Propuesta de valor, Segmentos, Canales y Relaciones.',deadline:false},
@@ -1294,7 +1294,7 @@ function coach(tid,k){
   if(own>0) out.push(['ok',`Tienen ${own} idea(s) propia(s). 👏`]);
   if(!j) out.push(['bad','Falta la justificación: ¿POR QUÉ eligieron esto? Escriban 2 o 3 oraciones.']);
   else{ if(j.length<80) out.push(['warn','La justificación es muy corta; expliquen el porqué con más detalle.']); if(!/\d/.test(j)) out.push(['warn','Incluyan al menos un DATO del caso (número, %, $) en la justificación.']); else out.push(['ok','La justificación usa datos. ✔️']); }
-  if(!b.owner) out.push(['warn','Asignen un responsable del bloque.']);
+  if(!b.owner) out.push(['warn','Opcional: elijan quién coordina el bloque. Todos pueden aportar ideas aquí.']);
   const has=x=>(T(tid).blocks[x]?.items||[]).length>0;
   if(k==='b2'&&!has('b1')) out.push(['warn','Tip: la propuesta de valor (1) y los segmentos (2) se diseñan juntos.']);
   if(k==='b3'&&!has('b2')) out.push(['warn','Primero definan los segmentos (2): cada canal debe llegar a un segmento.']);
@@ -1330,6 +1330,7 @@ function softRender(kind){
 }
 const after={};
 
+function allAreas(){ return `<div class="callout c-tip"><span class="ic">👐</span><div><b>Todos pueden trabajar aquí.</b> El rol solo dice quién <b>coordina</b>; cualquier integrante puede agregar ideas, capturar encuestas, llenar números y escribir la conclusión, aunque sea responsable de otra actividad. Cada aportación queda con su nombre.</div></div>`; }
 function needTeam(){
   return `<div class="card" style="text-align:center"><div style="font-size:54px">🔑</div><h2>Primero entra con la clave de tu equipo</h2><p class="muted">Tu profesora te da la clave de tu equipo. Si es tu primera vez, te registras con tu nombre.</p><button class="btn or big" onclick="openWho()">🔑 Escribir clave</button></div>`;
 }
@@ -1639,6 +1640,7 @@ function vCanvas(){
   if(!ME.team) return needTeam();
   const tm=teamById(ME.team), p=teamProgress(ME.team), C=CASES[caseIdOf(ME.team)];
   return `<div class="pagehead"><div><h1>🧩 Canvas de ${esc(tm.emoji+' '+tm.name)}</h1><div class="muted" style="font-size:1.05rem">${C.emoji} ${esc(C.full)}</div></div><div class="ring big" style="--p:${p}"><span>${p}%</span></div></div>
+  ${allAreas()}
   ${howTo(['Toca un bloque del lienzo (empiecen por el 1).','Lean “Aprende” y miren el ejemplo resuelto.','Elijan ideas, agreguen una propia, justifiquen con un dato y pasen al siguiente.'])}
   <div class="card" style="padding:14px"><div class="board" id="board">${boardInner()}</div></div>
   <div class="card editor" id="panel" style="--c:${BMAP[SELB].c}">${panelInner()}</div>`;
@@ -1669,7 +1671,7 @@ function panelInner(){
      <div class="muted" style="font-size:.9rem;margin-bottom:6px">¿No saben cómo empezar? Toquen una frase:</div>
      <div class="row" style="gap:6px;margin-bottom:8px">${TEMPLATES.map((t,i)=>`<button class="btn gh sm" data-tpl="${i}">${t.l}</button>`).join('')}</div>
      <textarea id="just" placeholder="Ej.: Elegimos … porque, según (fuente, año) / nuestra encuesta, el …%…">${esc(b.just||'')}</textarea></div>
-    <div class="stepbox"><div class="sh"><span>4</span>¿Quién es responsable de este bloque?</div>
+    <div class="stepbox"><div class="sh"><span>4</span>¿Quién coordina este bloque? <small class="muted">(todos pueden aportar ideas)</small></div>
      <select id="owner"><option value="">— Elegir —</option>${(tm.members||[]).map(m=>`<option ${b.owner===m?'selected':''}>${esc(m)}</option>`).join('')}</select></div>
     <div class="stepbox kab" id="kabBox">${kabInner(tid,SELB)}</div>
    </div>
@@ -1800,6 +1802,7 @@ function vEncuesta(){
      ${ins?`<div class="row" style="margin-top:6px"><span style="font-size:.85rem;flex:1">💬 <i>${esc(ins)}</i></span><button class="btn sm" data-useins="${i}">➕ Usar en la justificación del bloque ${bk.n}</button></div>`:''}</div>`}).join(''):`<div class="callout c-warn"><span class="ic">📭</span><div>Aún no hay respuestas. Vayan a <b>✍️ Capturar respuesta</b>.</div></div>`;
   if(SVTAB==='lista') body=R.length?`<div style="overflow-x:auto"><table><tr><th>#</th><th>Fecha</th><th>Capturó</th><th>Lugar</th><th></th></tr>${R.map((r,i)=>`<tr><td>${i+1}</td><td>${fmtDT(r.ts)}</td><td>${esc(r.by||'')}</td><td>${esc(r.place||'')}</td><td>${(isTeacher()||r.by===ME.name)?`<button class="btn gh sm" data-rdel="${r._k}">🗑️</button>`:''}</td></tr>`).join('')}</table></div>`:'<p class="muted">Sin respuestas todavía.</p>';
   return `<div class="pagehead"><div><h1>📊 Encuesta del equipo</h1><div class="muted">Datos propios para justificar su Canvas</div></div></div>
+  ${allAreas()}
   ${howTo(['Revisen el cuestionario y descárguenlo o cópienlo (papel, Google Forms o Excel).','Apliquen mínimo '+goal+' encuestas y metan los resultados: una por una o en 📥 Insertar resultados.','En 📈 Resultados descarguen sus gráficas en CSV y toquen “➕ Usar en la justificación”.'])}
   <div class="callout c-bee"><span class="ic">👀</span><div>¿No saben por dónde empezar? Miren <a href="#ejemplo">cómo hizo y aplicó su encuesta el equipo del ejemplo</a>, paso a paso.</div></div>
   ${helpBox('Encuesta para dummies: ¿cómo la aplicamos?',`<ol class="steps"><li><b>Revisen el cuestionario</b>: ya viene adaptado a su caso; pueden mejorarlo.</li><li><b>¿A quién encuestar?</b> A su segmento: ${esc(C.survey.target)}.</li><li><b>Meta:</b> mínimo ${goal} respuestas (por ejemplo, 4 por integrante).</li><li><b>Apliquen</b> en persona (lean y capturen aquí) o copien el cuestionario a Google Forms y luego capturen los resultados.</li><li><b>Analicen</b> en 📈 Resultados y toquen “➕ Usar en la justificación” para llevar el dato al Canvas.</li></ol><div class="callout c-warn"><span class="ic">🤝</span><div><b>Ética:</b> pidan permiso, expliquen que es un trabajo escolar y <b>no pidan nombre, teléfono, correo ni datos personales</b>. La participación es voluntaria.</div></div>`)}
@@ -1847,6 +1850,7 @@ function vNumeros(){
   if(!ME.team) return needTeam();
   const t=T(ME.team); if(!t.blocks.calc||!t.blocks.calc.rows) t.blocks.calc=calcDefaults(caseIdOf(ME.team)); const c=t.blocks.calc;
   return `<div class="pagehead"><div><h1>🧮 Números: ¿el modelo deja ganancia?</h1><div class="muted">Bloques 5 (ingresos) y 9 (costos)</div></div></div>
+  ${allAreas()}
   ${howTo(['Miren el ejemplo resuelto de Doña Lupe.','Llenen precio, costo y unidades de cada fuente de ingreso.','Lean los resultados y escriban qué significan.'])}
   ${numExample()}
   ${helpBox('Tutorial de Números (para dummies)',`<ol class="steps"><li><b>Precio</b>: cuánto paga el cliente por una unidad.</li><li><b>Costo variable unitario</b>: lo que te cuesta CADA unidad (frasco, etiqueta, empaque).</li><li><b>Margen unitario = Precio − Costo</b>. Es lo que te queda por cada unidad.</li><li><b>Unidades al mes</b>: cuánto creen vender. ¡Revisen la capacidad de producción del caso!</li><li><b>Costos fijos</b>: los pagas vendas o no.</li><li><b>Punto de equilibrio</b>: lo que necesitas vender ($) para no perder ni ganar.</li></ol><div class="callout c-tip"><span class="ic">💡</span><div>${esc((CASES[caseIdOf(ME.team)]||{}).calcHint||'Todos los datos están en la tabla del caso 📖.')} Ejemplo con un café: precio $65, costo $18 → margen $47 (72%).</div></div>`)}
@@ -1930,6 +1934,7 @@ function vPatron(){
   if(!ME.team) return needTeam();
   const t=T(ME.team); if(!t.blocks.pattern) t.blocks.pattern={patterns:[],why:'',chesNow:0,chesGoal:0,chesWhy:'',coh:{},conclusion:'',updatedAt:0}; const p=t.blocks.pattern; p.coh=p.coh||{};
   return `<div class="pagehead"><div><h1>🚀 Patrón de modelo e innovación</h1><div class="muted">La “fórmula” para ganar dinero y hacia dónde evolucionar</div></div></div>
+  ${allAreas()}
   ${howTo(['Elijan 1 o 2 patrones y expliquen por qué.','Ubiquen su caso HOY y su META en la tabla de Chesbrough.','Marquen el autochequeo y escriban la conclusión.'])}
   <div class="callout c-bee"><span class="ic">🌮</span><div><b>Ejemplo Doña Lupe:</b> eligió <b>Afiliación</b> (los hoteles le recomiendan a sus huéspedes y ella les da 10% de descuento). Hoy es Tipo 2 (diferenciado) y su meta es Tipo 4 (se abre a aliados). <i>Conclusión: “Elegimos este modelo y no vender en un local fijo porque la renta en la zona hotelera duplicaría nuestros costos fijos…”</i></div></div>
   ${helpBox('Tutorial (para dummies)',`<p>Un <b>patrón</b> es una “fórmula” probada para ganar dinero. Pueden combinar dos. Después, con la tipología de <b>Chesbrough</b>, ubiquen qué tan abierto e innovador es el modelo HOY y a dónde quieren llevarlo.</p><div class="callout c-warn"><span class="ic">🪤</span><div><b>Trampa cognitiva:</b> cuando un modelo ya funciona, la empresa tiende a ignorar la información que lo contradice y pierde un modelo mejor. ¿Le pasa eso a la cooperativa con el intermediario?</div></div>`)}
@@ -2171,6 +2176,9 @@ function caseReportHTML(cid,student,mode){
    <h1 style="color:#fff">${C.emoji||''} Reporte completo del caso · ${esc(C.full)}</h1>
    <div>Estudiante: <b>${esc(student||'________________________________')}</b>${tm?` · Equipo <b>${esc(tm.emoji+' '+tm.name)}</b> · ${esc(g.name)}`:' · Equipo: ________________'} · ${mode==='blank'?'Plantilla en blanco':'Versión con respuestas'} · ${fmtDT(Date.now())}</div></div>
    <h2>✅ Resumen de avance</h2>${S1}
+   ${own&&student?(()=>{const nm=normName(student).toLowerCase();const me=v=>normName(String(v||'').replace(/\s*\(.*\)$/,'')).toLowerCase()===nm;
+     const its=BLOCKS.flatMap(b=>(B[b.k]?.items||[]).filter(i=>me(i.by)).map(i=>({b,i})));const srv=responsesFrom(B).filter(r=>me(r.by)).length;const lg=(T(tid).log||[]).filter(e=>me(e.who)).length;
+     return `<h2>🙋 Aportaciones de ${esc(student)}</h2><p><span class="kpi">${its.length} ideas en el Canvas</span><span class="kpi">${srv} encuestas capturadas</span><span class="kpi">${lg} movimientos en la bitácora</span></p>${its.length?`<ul>${its.map(x=>`<li><b>${x.b.n}. ${esc(x.b.name)}:</b> ${esc(x.i.t)}</li>`).join('')}</ul>`:'<p class="muted">Aún no hay ideas registradas con este nombre en el Canvas.</p>'}`})():''}
    <h2>📖 1. El caso</h2><p><i>${esc(C.tagline||'')}</i></p>${C.context?`<p>${esc(C.context)}</p>`:''}${facts}${C.problem?`<h3>🔥 El problema</h3><p>${esc(C.problem)}</p>`:''}${C.reto?`<h3>🎯 El reto</h3><p>${esc(C.reto)}</p>`:''}${srcs}
    <h2>❓ 2. Preguntas detonadoras</h2>${(C.questions||[]).length?C.questions.map((q,i)=>`<p style="margin:8px 0 2px"><b>${i+1}. ${esc(q)}</b></p>${L(2)}`).join(''):'<p>(Sin preguntas para este caso.)</p>'}
    <h3>Datos investigados (mínimo 5, con fuente y año)</h3><table><tr><th>#</th><th>Dato</th><th>Fuente y año</th></tr>${[1,2,3,4,5].map(i=>`<tr><td>${i}</td><td style="height:28px"></td><td></td></tr>`).join('')}</table>
