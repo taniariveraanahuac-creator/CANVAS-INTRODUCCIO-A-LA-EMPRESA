@@ -26,6 +26,15 @@ Liga: https://taniariveraanahuac-creator.github.io/CANVAS-INTRODUCCIO-A-LA-EMPRE
 Cada equipo entra con su clave (la docente las entrega por separado), registra a sus integrantes
 (máximo 5) y ya tiene un caso asignado por defecto. Las claves se guardan cifradas (hash) en `index.html`.
 
+## Reporte completo por caso (por estudiante)
+En **📖 El caso**, cada estudiante elige cualquier caso, escribe su nombre y descarga el reporte con
+**todas las actividades** (caso, preguntas detonadoras, equipo, encuesta, Canvas, justificaciones,
+números, patrón, conclusión y rúbrica):
+- **Con las respuestas de mi equipo** (solo para el caso de su equipo ⭐): lo que falte sale con espacios para llenar.
+- **En blanco**: plantilla para llenar a mano o estudiar.
+
+También en **📄 Reporte** → «📚 Descargar con todas las secciones (contestadas o no)».
+
 ## Panel docente
 Pestaña 🍎 Docente. La clave está guardada cifrada (hash) en `index.html`.
 

@@ -304,6 +304,20 @@ ul.tight{margin:4px 0 10px;padding-left:20px}ul.tight li{margin:2px 0}
 @media (max-width:800px){.wkg{grid-template-columns:1fr}}
 .wkdone{background:#ecfdf3;border-radius:12px;padding:8px 10px;font-size:.95rem;margin-bottom:8px}
 .wkex{background:#fffaf2;border:1px dashed #fbd5a8;border-radius:12px;padding:8px 10px;font-size:.95rem}
+
+/* reporte completo por caso */
+.rep .wl{background:repeating-linear-gradient(to bottom,transparent 0,transparent 25px,#c9cfe0 25px,#c9cfe0 26px);margin:2px 0 8px}
+.rep .wl1{display:inline-block;min-width:85%;border-bottom:1px solid #c9cfe0;height:18px}.rep .wl1.s{min-width:70px}
+.rep ol.blank li{margin:6px 0}
+.rep .pend{font-size:.7rem;background:#fff4e6;color:#c2410c;border-radius:6px;padding:1px 6px;font-family:'Nunito',sans-serif;vertical-align:middle}
+.rep ul.ck{list-style:none;padding-left:4px}.rep ul.ck li{margin:3px 0}
+.rep .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.rep h3{font-family:'Baloo 2',Arial;font-size:1.05rem}
+.rep table{border-collapse:collapse;width:100%}
+.rep .cb{break-inside:avoid}
+.crOpt{display:flex;gap:8px;align-items:center;padding:8px 10px;border:2px solid var(--line);border-radius:10px;cursor:pointer}
+.crOpt:has(input:checked){border-color:var(--orange);background:#fff8ee}
+@media print{.rep h2{break-after:avoid}.rep table{break-inside:auto}}
 </style>
 </head>
 <body>
@@ -1700,7 +1714,8 @@ function vCaso(){
   ${howTo(['Elijan un caso (el ⭐ es el de su equipo) o cámbienlo.','Lean contexto, datos y reto; respondan las preguntas detonadoras.','Abran al menos 2 ligas de consulta y anoten fuente y año.'])}
   ${[['🌾 Agroindustria de la península (como PAMASUR)',CASE_ORDER.slice(0,6)],['🌎 Otros casos de la región',CASE_ORDER.slice(6)]].map(([t,ids])=>`<div style="margin-bottom:8px"><b style="font-size:.85rem">${t}</b><div class="row" style="margin-top:4px">${ids.map(id=>{const x=CASES[id];return `<button class="btn ${id===cid?'':'gh'} sm" data-case="${id}">${x.emoji} ${esc(x.name)}${id===mine?' ⭐':''}</button>`}).join('')}</div></div>`).join('')}
   ${ME.team&&ME.name!=='Invitado'?`<div class="callout ${mine===cid?'c-tip':'c-warn'}"><span class="ic">${mine===cid?'⭐':'🔁'}</span><div>${mine===cid?`Este es el caso de tu equipo <b>${esc(teamById(ME.team).emoji+' '+teamById(ME.team).name)}</b>.`:`Tu equipo trabaja <b>${esc(CASES[mine].full)}</b>. ¿Quieren cambiar a este caso? <button class="btn or sm" id="setCase">Elegir este caso para mi equipo</button>`}</div></div>`:''}
-  ${cid==='xunaan'?xunaanBody():realCaseBody(C)}`;
+  ${cid==='xunaan'?xunaanBody():realCaseBody(C)}
+  ${caseReportCard(cid)}`;
 }
 function realCaseBody(C){
   return `<section class="hero" style="background:linear-gradient(135deg,var(--navy),${C.color})"><div class="bee">${C.emoji}</div>
@@ -1725,6 +1740,7 @@ after.caso=()=>{
   if(ME.team) lsSet('canvaslab-seen-caso-'+ME.team,1);
   $('#main').onclick=e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.case){CASEVIEW=b.dataset.case;render();}
+    if(b.id==='crDl'||b.id==='crPr'){const cid=CASEVIEW||(ME.team?caseIdOf(ME.team):null)||'pamasur';caseReportGo(cid,b.id==='crPr');}
     if(b.id==='setCase'&&ME.team){const cid=CASEVIEW;openConfirm(`¿Cambiar el caso de su equipo a ${CASES[cid].full}? Lo que ya escribieron se conserva, pero las propuestas cambiarán.`,()=>{teamById(ME.team).caseId=cid;saveConfig();addLog(ME.team,`📖 Cambió el caso del equipo a ${CASES[cid].full}`);toast('📖 Caso actualizado');render();});}
   };
 };
@@ -2079,7 +2095,7 @@ function vReporte(){
   ${howTo(['Revisen el reporte: ¿falta algún bloque?','Toquen 💾 Guardar versión (ej. “Entrega final”).','Descárguenlo e imprímanlo como PDF si lo piden.'])}
   ${helpBox('¿Cómo funciona el reporte?',`<ul><li>Se arma <b>solo</b> con lo que el equipo llena en Canvas, Números, Patrón y Rúbrica.</li><li>Cada cambio se guarda automáticamente; además se crea un <b>respaldo automático</b> cada 10 minutos de trabajo.</li><li>Antes de la entrega, toquen <b>💾 Guardar versión</b> y pónganle nombre (ej. “Entrega final”).</li><li><b>⬇️ Descargar</b> genera un archivo que pueden abrir e imprimir como PDF.</li><li><b>Exportar respaldo</b> sirve para pasar el trabajo a otra computadora o enviarlo a la docente.</li></ul>`)}
   <div class="card" style="border:3px solid var(--orange)"><div class="row" style="justify-content:space-between"><h2 style="margin:0">📤 Entrega en Brightspace · Actividad 10</h2><a class="btn gh sm" href="#ejemplo">👀 Ver cómo debe verse</a></div>${uploadSteps()}</div>
-  <div class="card"><div class="row"><button class="btn or" id="saveV">💾 Guardar versión</button><button class="btn" id="dlRep">⬇️ Descargar reporte completo</button>${!(window.claude&&window.claude.use)?'<button class="btn" id="prRep">🖨️ Imprimir o guardar PDF</button>':''}<button class="btn gh" id="cpRep">📋 Copiar texto</button><button class="btn gh" id="expB">📤 Exportar respaldo</button><button class="btn gh" id="impB">📥 Importar respaldo</button></div></div>
+  <div class="card"><div class="row"><button class="btn or" id="saveV">💾 Guardar versión</button><button class="btn" id="dlRep">⬇️ Descargar reporte completo</button><button class="btn" id="dlAll">📚 Descargar con todas las secciones (contestadas o no)</button>${!(window.claude&&window.claude.use)?'<button class="btn" id="prRep">🖨️ Imprimir o guardar PDF</button>':''}<button class="btn gh" id="cpRep">📋 Copiar texto</button><button class="btn gh" id="expB">📤 Exportar respaldo</button><button class="btn gh" id="impB">📥 Importar respaldo</button></div></div>
   <div class="split" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr)">
    <div id="repBox">${v?`<div class="callout c-warn"><span class="ic">🕓</span><div>Estás viendo la versión del <b>${fmtDT(v.ts)}</b> (${esc(v.label||'')}). <button class="btn sm" id="backLive">Volver al reporte actual</button> <button class="btn bad sm" id="restore">♻️ Restaurar esta versión</button></div></div>`+reportBody(ME.team,v.snap,v):reportBody(ME.team)}</div>
    <div class="card"><h2>🕓 Versiones guardadas</h2>${t.reports.length?t.reports.map(r=>`<div class="member"><span><b>${esc(r.label||'Versión')}</b><br><small class="muted">${fmtDT(r.ts)} · ${esc(r.who)} · ${r.progress||0}%</small></span><button class="btn gh sm" data-vrep="${r.id}">Ver</button></div>`).join(''):'<p class="muted">Aún no hay versiones. Se crean solas mientras trabajan o con “Guardar versión”.</p>'}
@@ -2091,6 +2107,7 @@ after.reporte=()=>{
   $('#saveV').onclick=()=>openEdit('',v=>{addReport(tid,v||'Versión');toast('💾 Versión guardada');render();},'Nombre de la versión (ej. Entrega final)');
   $('#dlRep').onclick=()=>downloadFile(`Reporte_Canvas_${tm.name}.html`,reportDoc($('#repBox .rep').outerHTML,`Reporte Canvas · ${tm.name}`),'text/html');
   $('#cpRep').onclick=()=>copyText($('#repBox .rep').innerText);
+  $('#dlAll').onclick=()=>caseReportGo(caseIdOf(tid),false,'resp');
   const pr=$('#prRep'); if(pr) pr.onclick=()=>{const w=window.open('','_blank');if(!w){toast('Permite las ventanas emergentes para imprimir');return;}w.document.open();w.document.write(reportDoc($('#repBox .rep').outerHTML,`Reporte Canvas · ${tm.name}`));w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(e){}},900);};
   $('#expB').onclick=()=>downloadFile(`Respaldo_Canvas_${tm.name}.json`,JSON.stringify({kind:'canvaslab-team',tid,team:tm,data:T(tid),exportedAt:Date.now()},null,1),'application/json');
   $('#impB').onclick=()=>openImport();
@@ -2100,6 +2117,95 @@ after.reporte=()=>{
     if(b.id==='restore'){const v=T(tid).reports.find(r=>r.id===VIEWREP);openConfirm('¿Restaurar esta versión? El trabajo actual se guardará primero como respaldo.',()=>{addReport(tid,'Antes de restaurar',true);Object.entries(v.snap.blocks).forEach(([k,val])=>{T(tid).blocks[k]=clone(val);touchBlock(tid,k);});addLog(tid,`♻️ Restauró la versión del ${fmtDT(v.ts)}`);VIEWREP=null;toast('♻️ Versión restaurada');render();});}
   };
 };
+
+
+/* ---------- REPORTE COMPLETO POR CASO (por estudiante, contestado o en blanco) ---------- */
+function caseReportHTML(cid,student,mode){
+  const C=CASES[cid]; const tid=ME.team; const own=mode==='resp'&&tid&&caseIdOf(tid)===cid;
+  const B=own?T(tid).blocks:{}; const tm=own?teamById(tid):null; const g=tm?groupById(tm.group)||{name:''}:{name:''};
+  const L=(n,h)=>`<div class="wl" style="height:${(n||3)*26}px"></div>`;
+  const P=(v,n)=>{v=String(v??'').trim();return v?`<p>${esc(v)}</p>`:L(n)};
+  const box=on=>on?'☑':'☐';
+  // estado de cada sección
+  const blocksFilled=BLOCKS.filter(b=>(B[b.k]?.items||[]).length).length;
+  const svN=own?surveyNFrom(B):0; const calc=own&&B.calc&&B.calc.rows?B.calc:calcDefaults(cid); const x=calcTotals(calc);
+  const calcOk=x.rows.some(r=>r.price&&r.u); const p=own?(B.pattern||{}):{}; const se=own?((B.selfeval||{}).levels||null):null;
+  const st=[['📖','El caso',true],['❓','Preguntas detonadoras',false],['👥','Equipo y roles',own&&tm&&tm.members.length],['📊','Encuesta',svN>0],['🧩','Canvas (9 bloques)',blocksFilled===9,blocksFilled+' de 9'],['🧮','Números',calcOk],['🚀','Patrón e innovación',(p.patterns||[]).length>0],['🎯','Conclusión',!!(p.conclusion||'').trim()],['📏','Autoevaluación',!!se]];
+  const S1=`<table><tr><th>Sección</th><th>Estado</th></tr>${st.map(s=>`<tr><td>${s[0]} ${s[1]}</td><td>${s[1]==='El caso'?'📄 Incluido':s[2]?'✅ Contestada'+(s[3]?' ('+s[3]+')':''):'⬜ Pendiente'+(s[3]?' ('+s[3]+')':'')+' · espacio para llenar'}</td></tr>`).join('')}</table>`;
+  const facts=(C.facts||[]).length?`<h3>Datos del caso</h3><table><tr><th>Dato</th><th>Valor</th><th>Fuente</th></tr>${C.facts.map(f=>`<tr><td><b>${esc(f[0])}</b></td><td>${esc(f[1])}</td><td>${esc(f[2])}</td></tr>`).join('')}</table>`:'';
+  const srcs=(C.sources||[]).length?`<h3>Fuentes de consulta</h3><ul>${C.sources.map(s=>`<li>${esc(s.t)} · <span style="word-break:break-all">${esc(s.u)}</span></li>`).join('')}</ul>`:'';
+  // encuesta
+  const sv=own&&B.survey&&B.survey.questions?B.survey:{questions:(C.survey&&C.survey.questions)||[],goal:20};
+  const RS=own?responsesFrom(B):[];
+  const survey=sv.questions.length?`<p><b>Público:</b> ${esc((C.survey&&C.survey.target)||'—')} · <b>Personas encuestadas:</b> ${svN||'______'} (meta ${sv.goal||20})</p><table><tr><th>#</th><th>Pregunta</th><th>Bloque</th><th>${svN?'Resultados':'Opciones · anota cuántas personas eligieron cada una'}</th></tr>${sv.questions.map((q,i)=>{let res;
+     if(svN&&q.id){const r=tabulate(q,RS,MAN(sv,q));res='—';if(r.n){if(q.type==='scale')res=`<b>Promedio ${r.avg.toFixed(1)} / 5</b> (n = ${r.n})`;else if(q.type==='open')res=r.list.slice(0,8).map(esc).join(' · ');else res=q.opts.map((o,k)=>`${esc(o)}: ${Math.round(r.pct[k]*100)}%`).join(' · ')+` (n = ${r.n})`;}}
+     else res=q.type==='open'?L(2):q.type==='scale'?'1 ☐ ____ · 2 ☐ ____ · 3 ☐ ____ · 4 ☐ ____ · 5 ☐ ____':(q.opts||[]).map(o=>`☐ ${esc(o)}: ____`).join('<br>');
+     return `<tr><td>${i+1}</td><td>${esc(q.q)}</td><td>${(BMAP[q.b]||BMAP.b1).n}</td><td>${res}</td></tr>`}).join('')}</table>
+     <p><b>¿Qué aprendimos de la encuesta?</b></p>${L(3)}`:'<p>(Este caso no tiene encuesta.)</p>';
+  // canvas
+  const gridPos={b8:'1/3;grid-row:1/3',b7:'3/5;grid-row:1',b6:'3/5;grid-row:2',b1:'5/7;grid-row:1/3',b4:'7/9;grid-row:1',b3:'7/9;grid-row:2',b2:'9/11;grid-row:1/3',b9:'1/6;grid-row:3',b5:'6/11;grid-row:3'};
+  const grid=`<div class="rgrid">${BLOCKS.map(b=>`<div class="rb" style="grid-column:${gridPos[b.k]};border-top-color:${b.hex};min-height:120px"><b>${b.n}. ${b.icon} ${esc(b.name)}</b><ul>${(B[b.k]?.items||[]).map(i=>`<li>${esc(i.t)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+  const detail=BLOCKS.map(b=>{const d=B[b.k]||{};const it=d.items||[];return `<div class="cb"><h3 style="color:${b.hex};margin:10px 0 2px">${b.n}. ${b.icon} ${esc(b.name)} ${it.length?'':'<span class="pend">por contestar</span>'}</h3><div class="muted" style="font-size:.85rem">❓ ${esc(b.q)}</div>${own&&d.owner?`<div style="font-size:.82rem">Responsable: ${esc(d.owner)}</div>`:'<div style="font-size:.82rem">Responsable: ____________________</div>'}
+     <p style="margin:6px 0 2px"><b>Ideas (3 a 5):</b></p>${it.length?`<ul>${it.map(i=>`<li>${esc(i.t)}</li>`).join('')}</ul>`:`<ol class="blank">${[1,2,3,4,5].map(()=>'<li><span class="wl1"></span></li>').join('')}</ol>`}
+     <p style="margin:6px 0 2px"><b>Justificación con datos (fuente y año):</b></p>${P(d.just,3)}</div>`}).join('');
+  // números
+  const cell=(v,fmt)=>v?fmt(v):'<span class="wl1 s"></span>';
+  const nums=`<table><tr><th>Fuente de ingreso</th><th>Precio</th><th>Costo variable</th><th>Margen</th><th>Unidades/mes</th><th>Ingreso/mes</th></tr>${x.rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${cell(r.price,money)}</td><td>${cell(r.vc,money)}</td><td>${r.price?money(r.mu)+' ('+Math.round(r.mp*100)+'%)':'<span class="wl1 s"></span>'}</td><td>${cell(r.u,v=>v)}</td><td>${r.price&&r.u?money(r.rev):'<span class="wl1 s"></span>'}</td></tr>`).join('')}</table>
+   <div class="grid2"><table><tr><th>Costos fijos al mes</th><th>Monto</th></tr>${(calc.fixed||[]).map(f=>`<tr><td>${esc(f.name)}</td><td>${cell(num(f.amount),money)}</td></tr>`).join('')}</table>
+   <table><tr><th>Inversión inicial</th><th>Monto</th></tr>${(calc.inv||[]).map(f=>`<tr><td>${esc(f.name)}</td><td>${cell(num(f.amount),money)}</td></tr>`).join('')}</table></div>
+   ${calcOk?`<div style="margin-top:6px"><span class="kpi">Ingresos/mes ${money(x.rev)}</span><span class="kpi">Costos fijos ${money(x.fixed)}</span><span class="kpi">Utilidad/mes ${money(x.util)}</span><span class="kpi">Punto de equilibrio ${isFinite(x.be)?money(x.be):'—'}</span><span class="kpi">Recuperación ${isFinite(x.payback)?x.payback.toFixed(1)+' meses':'—'}</span></div>`
+   :`<table><tr><th>Ingresos/mes</th><th>Costos fijos</th><th>Utilidad/mes</th><th>Punto de equilibrio</th><th>Meses para recuperar</th></tr><tr>${'<td><span class="wl1 s"></span></td>'.repeat(5)}</tr></table><p class="muted" style="font-size:.82rem">Margen = precio − costo variable · Utilidad = (ingresos − costos variables) − costos fijos · Punto de equilibrio = costos fijos ÷ % de margen</p>`}
+   <p><b>Interpretación: ¿el modelo deja ganancia?</b></p>${P(calc.notes,3)}`;
+  // patrón
+  const pat=`<p><b>Patrón de modelo de negocio (marca uno o dos):</b></p><ul class="ck">${PATTERNS.map(q=>`<li>${box((p.patterns||[]).includes(q.id))} ${q.ic} <b>${esc(q.n)}</b>: ${esc(q.d)}</li>`).join('')}</ul>
+   <p><b>¿Por qué este patrón?</b></p>${P(p.why,2)}
+   <p><b>Innovación según Chesbrough:</b> hoy Tipo ${p.chesNow?p.chesNow+' ('+esc(CHES[p.chesNow-1].t)+')':'____'} → meta Tipo ${p.chesGoal?p.chesGoal+' ('+esc(CHES[p.chesGoal-1].t)+')':'____'}</p>
+   <table><tr><th>Tipo</th><th>Nombre</th><th>Descripción</th></tr>${CHES.map(c=>`<tr><td>${c.n}</td><td>${esc(c.t)}</td><td>${esc(c.d)}</td></tr>`).join('')}</table>
+   <p><b>¿Cómo pasarían de un tipo al otro?</b></p>${P(p.chesWhy,2)}
+   <p><b>Autochequeo de coherencia:</b></p><ul class="ck">${COHERENCE.map((q,i)=>`<li>${box(p.coh&&p.coh[i])} ${esc(q)}</li>`).join('')}</ul>`;
+  const rub=`<table><tr><th>Criterio</th><th>Peso</th>${LVL.map(l=>`<th>${l.n}</th>`).join('')}</tr>${RUBRIC.map(r=>`<tr><td><b>${esc(r.n)}</b></td><td>${r.w}</td>${r.lv.map((d,k)=>`<td style="font-size:.74rem">${se&&se[r.id]===k?'☑':'☐'} ${esc(d)}</td>`).join('')}</tr>`).join('')}<tr><th colspan="2">Autoevaluación (sobre 10)</th><th colspan="${LVL.length}">${se?gradeOf(se).toFixed(1):'______'}</th></tr></table>`;
+  const members=own&&tm?tm.members:[]; const roles=(B.meta&&B.meta.roles)||{};
+  const team=`<table><tr><th>Integrante</th><th>Rol</th><th>Bloques a cargo</th></tr>${members.length?members.map(m=>`<tr><td>${esc(m)}</td><td>${esc(roles[m]||'—')}</td><td>${BLOCKS.filter(b=>B[b.k]&&B[b.k].owner===m).map(b=>b.n).join(', ')||'—'}</td></tr>`).join(''):[1,2,3,4,5].map(()=>'<tr><td style="height:28px"></td><td></td><td></td></tr>').join('')}</table>`;
+  return `<div class="rep caserep">
+   <div class="rhead"><small>Universidad Anáhuac Cancún · Escuela Internacional de Negocios · ADM1401 Introducción a la Empresa · Tema 10 · Actividad 10</small>
+   <h1 style="color:#fff">${C.emoji||''} Reporte completo del caso · ${esc(C.full)}</h1>
+   <div>Estudiante: <b>${esc(student||'________________________________')}</b>${tm?` · Equipo <b>${esc(tm.emoji+' '+tm.name)}</b> · ${esc(g.name)}`:' · Equipo: ________________'} · ${mode==='blank'?'Plantilla en blanco':'Versión con respuestas'} · ${fmtDT(Date.now())}</div></div>
+   <h2>✅ Resumen de avance</h2>${S1}
+   <h2>📖 1. El caso</h2><p><i>${esc(C.tagline||'')}</i></p>${C.context?`<p>${esc(C.context)}</p>`:''}${facts}${C.problem?`<h3>🔥 El problema</h3><p>${esc(C.problem)}</p>`:''}${C.reto?`<h3>🎯 El reto</h3><p>${esc(C.reto)}</p>`:''}${srcs}
+   <h2>❓ 2. Preguntas detonadoras</h2>${(C.questions||[]).length?C.questions.map((q,i)=>`<p style="margin:8px 0 2px"><b>${i+1}. ${esc(q)}</b></p>${L(2)}`).join(''):'<p>(Sin preguntas para este caso.)</p>'}
+   <h3>Datos investigados (mínimo 5, con fuente y año)</h3><table><tr><th>#</th><th>Dato</th><th>Fuente y año</th></tr>${[1,2,3,4,5].map(i=>`<tr><td>${i}</td><td style="height:28px"></td><td></td></tr>`).join('')}</table>
+   <h2>👥 3. Equipo y roles</h2>${team}
+   <h2>📊 4. Encuesta</h2>${survey}
+   <h2>🧩 5. Business Model Canvas</h2>${grid}
+   <h2>📝 6. Detalle y justificación por bloque</h2>${detail}
+   <h2>🧮 7. Números</h2>${nums}
+   <h2>🚀 8. Patrón e innovación</h2>${pat}
+   <h2>🎯 9. Conclusión: ¿por qué este modelo y no otro?</h2>${P(p.conclusion,5)}
+   <h2>📏 10. Rúbrica y autoevaluación</h2>${rub}
+   <p style="font-size:.75rem;color:#5d6480;margin-top:18px">Referencias: Osterwalder, A. y Pigneur, Y. (2010). Business Model Generation. Wiley · Chesbrough, H. (2007). Business model innovation: it's not just about technology anymore. Strategy &amp; Leadership, 35(6).</p>
+  </div>`;
+}
+function caseReportCard(cid){
+  const own=ME.team&&caseIdOf(ME.team)===cid; const nm=ME.name&&ME.name!=='Invitado'?ME.name:'';
+  return `<div class="card" id="crCard" style="border:3px solid var(--orange)"><h2 style="margin-top:0">📥 Descarga el reporte completo de este caso</h2>
+   <p class="muted" style="margin-top:0">Incluye <b>todas las actividades</b>: caso, preguntas, equipo, encuesta, Canvas, justificaciones, números, patrón, conclusión y rúbrica. Lo que no esté contestado sale con espacios para llenar.</p>
+   <div class="row" style="align-items:flex-end;gap:12px">
+    <label style="flex:1;min-width:220px"><b>Tu nombre</b><br><input id="crName" value="${esc(nm)}" placeholder="Nombre y apellido" style="width:100%;padding:10px;border:2px solid var(--line);border-radius:10px"></label>
+   </div>
+   <div style="margin:10px 0;display:grid;gap:6px">
+    <label class="crOpt"><input type="radio" name="crMode" value="resp" ${own?'checked':'disabled'}> ✍️ <b>Con las respuestas de mi equipo</b> ${own?'(lo que falte sale en blanco)':'<span class="muted">· disponible solo para el caso de tu equipo ⭐</span>'}</label>
+    <label class="crOpt"><input type="radio" name="crMode" value="blank" ${own?'':'checked'}> 📄 <b>En blanco</b> (plantilla para llenar a mano o estudiar)</label>
+   </div>
+   <div class="row"><button class="btn or" id="crDl">⬇️ Descargar reporte</button><button class="btn" id="crPr">🖨️ Imprimir o guardar PDF</button></div></div>`;
+}
+function caseReportGo(cid,print,mode){
+  const name=($('#crName')||{}).value||(ME.name&&ME.name!=='Invitado'?ME.name:''); const m=mode||(document.querySelector('input[name=crMode]:checked')||{}).value||'blank';
+  const C=CASES[cid]; const fn=`Reporte_${C.name.replace(/[^\wÁÉÍÓÚáéíóúÑñ]+/g,'_')}_${(name||'estudiante').trim().replace(/\s+/g,'_')}_${m==='blank'?'en_blanco':'respuestas'}`;
+  const doc=reportDoc(caseReportHTML(cid,name.trim(),m),fn.replace(/_/g,' '));
+  if(!print){downloadFile(fn+'.html',doc,'text/html');return;}
+  const w=window.open('','_blank'); if(!w){toast('Permite las ventanas emergentes para imprimir');return;}
+  w.document.open();w.document.write(doc);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(e){}},900);
+}
 
 /* ---------- DOCENTE ---------- */
 let DOCT=null;
