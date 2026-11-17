@@ -35,6 +35,12 @@ números, patrón, conclusión y rúbrica):
 
 También en **📄 Reporte** → «📚 Descargar con todas las secciones (contestadas o no)».
 
+## 🙋 Registros por alumno
+Pestaña **🙋 Alumnos** (arriba a la derecha):
+- **Docente:** todos los alumnos inscritos por grupo y equipo, con ideas aportadas al Canvas, encuestas capturadas,
+  movimientos, bloques que coordina y última actividad. Botones 👁️ Ver (detalle) y ⬇️ Reporte individual. Lista en CSV.
+- **Alumnos:** ven los registros de los integrantes de su equipo (su fila marcada con 👤) y descargan su reporte.
+
 ## Panel docente
 Pestaña 🍎 Docente. La clave está guardada cifrada (hash) en `index.html`.
 

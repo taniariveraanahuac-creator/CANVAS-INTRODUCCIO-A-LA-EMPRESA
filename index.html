@@ -318,6 +318,9 @@ ul.tight{margin:4px 0 10px;padding-left:20px}ul.tight li{margin:2px 0}
 .crOpt{display:flex;gap:8px;align-items:center;padding:8px 10px;border:2px solid var(--line);border-radius:10px;cursor:pointer}
 .crOpt:has(input:checked){border-color:var(--orange);background:#fff8ee}
 @media print{.rep h2{break-after:avoid}.rep table{break-inside:auto}}
+
+.altab{border-collapse:collapse;width:100%}.altab th,.altab td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top;font-size:.9rem}
+.altab th{background:#f4f6fb;font-size:.8rem}.altab td.n{text-align:center;font-weight:800;font-size:1.05rem}.altab tr.me td{background:#fff8ee}
 </style>
 </head>
 <body>
@@ -1307,7 +1310,7 @@ function coach(tid,k){
    RENDER GENERAL
    ========================================================= */
 let VIEW='inicio', SELB='b1', PTAB='tuto';
-const VIEWS={inicio:vInicio,aprende:vAprende,ejemplo:vEjemplo,caso:vCaso,canvas:vCanvas,numeros:vNumeros,encuesta:vEncuesta,patron:vPatron,equipos:vEquipos,calendario:vCalendario,rubrica:vRubrica,reporte:vReporte,docente:vDocente,claves:vClaves};
+const VIEWS={inicio:vInicio,aprende:vAprende,ejemplo:vEjemplo,caso:vCaso,canvas:vCanvas,numeros:vNumeros,encuesta:vEncuesta,patron:vPatron,equipos:vEquipos,calendario:vCalendario,rubrica:vRubrica,reporte:vReporte,alumnos:vAlumnos,docente:vDocente,claves:vClaves};
 function route(){ const h=(location.hash||'').replace('#',''); VIEW=VIEWS[h]?h:'inicio'; render(); window.scrollTo(0,0); }
 function render(){
   if(ME.team&&!teamById(ME.team)){ME.team=null;lsSet(LS_ME,ME);}
@@ -1348,7 +1351,7 @@ const STEPS=[
  {v:'patron',t:'Patrón',ic:'🚀',d:'Elijan su fórmula de ingresos y escriban la conclusión.'},
  {v:'reporte',t:'Reporte',ic:'📄',d:'Se arma solo. Guarden la versión final y súbanla a Brightspace (Actividad 10).'}
 ];
-const EXTRA=[{v:'rubrica',t:'Rúbrica',ic:'📏'},{v:'calendario',t:'Calendario',ic:'📅'},{v:'docente',t:'Docente',ic:'🍎'},{v:'claves',t:'Claves',ic:'🔑'}];
+const EXTRA=[{v:'alumnos',t:'Alumnos',ic:'🙋'},{v:'rubrica',t:'Rúbrica',ic:'📏'},{v:'calendario',t:'Calendario',ic:'📅'},{v:'docente',t:'Docente',ic:'🍎'},{v:'claves',t:'Claves',ic:'🔑'}];
 const NO_CHECK=['equipos','caso'];
 function stepDone(v){ return NO_CHECK.includes(v)?false:realDone(v); }
 function realDone(v){
@@ -2125,8 +2128,8 @@ after.reporte=()=>{
 
 
 /* ---------- REPORTE COMPLETO POR CASO (por estudiante, contestado o en blanco) ---------- */
-function caseReportHTML(cid,student,mode){
-  const C=CASES[cid]; const tid=ME.team; const own=mode==='resp'&&tid&&caseIdOf(tid)===cid;
+function caseReportHTML(cid,student,mode,forTid){
+  const C=CASES[cid]; const tid=forTid||ME.team; const own=mode==='resp'&&tid&&caseIdOf(tid)===cid;
   const B=own?T(tid).blocks:{}; const tm=own?teamById(tid):null; const g=tm?groupById(tm.group)||{name:''}:{name:''};
   const L=(n,h)=>`<div class="wl" style="height:${(n||3)*26}px"></div>`;
   const P=(v,n)=>{v=String(v??'').trim();return v?`<p>${esc(v)}</p>`:L(n)};
@@ -2206,14 +2209,69 @@ function caseReportCard(cid){
    </div>
    <div class="row"><button class="btn or" id="crDl">⬇️ Descargar reporte</button><button class="btn" id="crPr">🖨️ Imprimir o guardar PDF</button></div></div>`;
 }
-function caseReportGo(cid,print,mode){
-  const name=($('#crName')||{}).value||(ME.name&&ME.name!=='Invitado'?ME.name:''); const m=mode||(document.querySelector('input[name=crMode]:checked')||{}).value||'blank';
+function caseReportGo(cid,print,mode,student,forTid){
+  const name=student||($('#crName')||{}).value||(ME.name&&ME.name!=='Invitado'&&ME.name!=='Docente'?ME.name:''); const m=mode||(document.querySelector('input[name=crMode]:checked')||{}).value||'blank';
   const C=CASES[cid]; const fn=`Reporte_${C.name.replace(/[^\wÁÉÍÓÚáéíóúÑñ]+/g,'_')}_${(name||'estudiante').trim().replace(/\s+/g,'_')}_${m==='blank'?'en_blanco':'respuestas'}`;
-  const doc=reportDoc(caseReportHTML(cid,name.trim(),m),fn.replace(/_/g,' '));
+  const doc=reportDoc(caseReportHTML(cid,name.trim(),m,forTid),fn.replace(/_/g,' '));
   if(!print){downloadFile(fn+'.html',doc,'text/html');return;}
   const w=window.open('','_blank'); if(!w){toast('Permite las ventanas emergentes para imprimir');return;}
   w.document.open();w.document.write(doc);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(e){}},900);
 }
+
+
+/* ---------- REGISTROS POR ALUMNO ---------- */
+let ALVIEW=null;
+function sameName(a,b){ return normName(String(a||'').replace(/\s*\(.*\)$/,'')).toLowerCase()===normName(b).toLowerCase(); }
+function studentStats(tid,name){
+  const B=T(tid).blocks;
+  const ideas=BLOCKS.flatMap(b=>(B[b.k]?.items||[]).filter(i=>sameName(i.by,name)).map(i=>({b,i})));
+  const coord=BLOCKS.filter(b=>B[b.k]&&sameName(B[b.k].owner,name));
+  const surveys=responsesFrom(B).filter(r=>sameName(r.by,name));
+  const logs=(T(tid).log||[]).filter(e=>sameName(e.who,name));
+  const tss=[...ideas.map(x=>x.i.ts||0),...surveys.map(r=>r.ts||0),...logs.map(e=>e.ts||0)];
+  const roles=(B.meta&&B.meta.roles)||{};
+  return {ideas,coord,surveys,logs,role:roles[name]||'',last:tss.length?Math.max(...tss):0};
+}
+function vAlumnos(){
+  const teach=isTeacher();
+  if(!teach&&!ME.team) return needTeam();
+  const teams=teach?S.config.teams:[teamById(ME.team)];
+  const rows=[];
+  teams.forEach(tm=>{(tm.members||[]).forEach(m=>{rows.push({tm,m,s:studentStats(tm.id,m)});});});
+  const groups=teach?S.config.groups:[groupById(teams[0].group)||{id:teams[0].group,name:''}];
+  const tot=rows.length, act=rows.filter(r=>r.s.ideas.length||r.s.surveys.length||r.s.logs.length).length;
+  return `<div class="pagehead"><div><h1>🙋 Registros por alumno</h1><div class="muted">${teach?'Todos los alumnos inscritos, con lo que aportó cada uno.':'Lo que aportó cada integrante de tu equipo. Tú también apareces aquí.'}</div></div></div>
+  ${howTo(teach?['Revisa quién ya participó y quién no.','Toca 👁️ Ver para el detalle de cada alumno.','Descarga el reporte individual con ⬇️.']:['Busca tu nombre (👤).','Toca 👁️ Ver para revisar tus aportaciones.','Descarga tu reporte individual con ⬇️.'])}
+  ${!CLOUD.on?`<div class="callout c-warn"><span class="ic">💾</span><div><b>Ojo:</b> el guardado compartido no está activado, así que aquí solo aparece lo que se trabajó <b>en esta computadora</b>. Para ver lo de todos los dispositivos hay que conectar la hoja de Google (sync.json).</div></div>`:''}
+  <div class="row" style="margin-bottom:10px"><span class="tag">👥 ${tot} alumnos inscritos</span><span class="tag">✅ ${act} con aportaciones</span><span class="tag">⏳ ${tot-act} sin aportaciones todavía</span>${teach&&CLOUD.on?'<button class="btn gh sm" id="alRefresh">🔄 Actualizar desde la nube</button>':''}<button class="btn gh sm" id="alCsv">⬇️ Descargar lista (Excel/CSV)</button></div>
+  ${groups.map(g=>{const rs=rows.filter(r=>r.tm.group===g.id);if(!rs.length)return '';return `<div class="card"><h2 style="margin-top:0">${esc(g.name||'Mi equipo')}</h2><div style="overflow-x:auto"><table class="altab"><tr><th>Alumno</th><th>Equipo · caso</th><th>Rol</th><th>Coordina</th><th>💡 Ideas</th><th>📊 Encuestas</th><th>🗒️ Movimientos</th><th>Última actividad</th><th></th></tr>
+   ${rs.map((r,ix)=>{const me=sameName(r.m,ME.name||'');const none=!(r.s.ideas.length||r.s.surveys.length||r.s.logs.length);return `<tr class="${me?'me':''}"><td><b>${me?'👤 ':''}${esc(r.m)}</b></td><td>${esc(r.tm.emoji+' '+r.tm.name)}<br><small class="muted">${esc(CASES[caseIdOf(r.tm.id)].name)}</small></td><td><small>${esc(r.s.role||'—')}</small></td><td>${r.s.coord.map(b=>b.n).join(', ')||'—'}</td><td class="n">${r.s.ideas.length}</td><td class="n">${r.s.surveys.length}</td><td class="n">${r.s.logs.length}</td><td>${none?'<span class="tag" style="background:#fff4e6;color:#c2410c">Sin aportaciones</span>':fmtDT(r.s.last)}</td><td style="white-space:nowrap"><button class="btn gh sm" data-alv="${esc(r.tm.id)}|${esc(r.m)}">👁️ Ver</button> <button class="btn sm" data-ald="${esc(r.tm.id)}|${esc(r.m)}">⬇️ Reporte</button></td></tr>`}).join('')}
+   </table></div></div>`}).join('')}`;
+}
+function alumnoDetail(tid,name){
+  const s=studentStats(tid,name), tm=teamById(tid);
+  return `<h2>🙋 ${esc(name)}</h2><p class="muted">${esc(tm.emoji+' '+tm.name)} · ${esc(CASES[caseIdOf(tid)].full)} · Rol: ${esc(s.role||'—')}</p>
+  <div class="row"><span class="tag">💡 ${s.ideas.length} ideas</span><span class="tag">📊 ${s.surveys.length} encuestas</span><span class="tag">🗒️ ${s.logs.length} movimientos</span>${s.coord.length?`<span class="tag">🧭 Coordina: ${s.coord.map(b=>b.n+'. '+esc(b.name)).join(', ')}</span>`:''}</div>
+  <h3>💡 Ideas que agregó al Canvas</h3>${s.ideas.length?`<ul>${s.ideas.map(x=>`<li><b>${x.b.icon} ${x.b.n}. ${esc(x.b.name)}:</b> ${esc(x.i.t)} <small class="muted">· ${x.i.src==='prop'?'propuesta':'idea propia'} · ${fmtDT(x.i.ts)}</small></li>`).join('')}</ul>`:'<p class="muted">Todavía no hay ideas con su nombre.</p>'}
+  <h3>📊 Encuestas que capturó</h3>${s.surveys.length?`<p>${s.surveys.length} encuesta(s): ${s.surveys.slice(0,12).map(r=>esc(r.place||'')+' '+fmtDT(r.ts)).join(' · ')}${s.surveys.length>12?' …':''}</p>`:'<p class="muted">Todavía no capturó encuestas.</p>'}
+  <h3>🗒️ Bitácora</h3>${s.logs.length?`<div style="max-height:260px;overflow:auto">${s.logs.slice(0,60).map(e=>`<div style="font-size:.85rem;border-bottom:1px dashed var(--line);padding:3px 0">${esc(e.msg)} <span class="muted">${fmtDT(e.ts)}</span></div>`).join('')}</div>`:'<p class="muted">Sin movimientos.</p>'}
+  <div class="row" style="margin-top:14px"><button class="btn or" data-ald="${esc(tid)}|${esc(name)}">⬇️ Descargar su reporte</button><button class="btn gh" onclick="closeModal()">Cerrar</button></div>`;
+}
+function alumnosCSV(){
+  const teams=isTeacher()?S.config.teams:[teamById(ME.team)];
+  const rows=[['Grupo','Equipo','Caso','Alumno','Rol','Bloques que coordina','Ideas en Canvas','Encuestas capturadas','Movimientos','Última actividad']];
+  teams.forEach(tm=>(tm.members||[]).forEach(m=>{const s=studentStats(tm.id,m);rows.push([(groupById(tm.group)||{}).name||'',tm.name,CASES[caseIdOf(tm.id)].name,m,s.role,s.coord.map(b=>b.n).join(' '),s.ideas.length,s.surveys.length,s.logs.length,s.last?new Date(s.last).toLocaleString('es-MX'):''])}));
+  return '﻿'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+}
+after.alumnos=()=>{
+  const r=$('#alRefresh'); if(r) r.onclick=async()=>{await refreshAllFromCloud();render();};
+  $('#alCsv').onclick=()=>downloadFile('Registros_por_alumno.csv',alumnosCSV(),'text/csv');
+};
+document.addEventListener('click',e=>{
+  const v=e.target.closest('[data-alv]'), d=e.target.closest('[data-ald]');
+  if(v){const [tid,...n]=v.dataset.alv.split('|');modal(alumnoDetail(tid,n.join('|')));}
+  if(d){const [tid,...n]=d.dataset.ald.split('|');const nm=n.join('|');if(!isTeacher()&&tid!==ME.team){toast('Solo puedes descargar los de tu equipo');return;}caseReportGo(caseIdOf(tid),false,'resp',nm,tid);}
+});
 
 /* ---------- DOCENTE ---------- */
 let DOCT=null;
@@ -2252,7 +2310,7 @@ function vDocente(){
   if(!isTeacher()) return `<div class="card" style="max-width:520px;margin:30px auto;text-align:center"><div style="font-size:54px">🍎</div><h2>Panel docente</h2><p class="muted">Para la profesora: evaluación con rúbrica, avance de todos los equipos, reorganización de equipos y reportes generales.</p><input type="password" id="pin" placeholder="Clave docente"><button class="btn or" id="pinOk" style="margin-top:10px">Entrar</button></div>`;
   DOCT=DOCT||S.config.teams[0].id; const gr=S.grades[DOCT]||{levels:{},comments:{},general:''};
   return `<h1>🍎 Panel docente</h1>
-  <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">📊 Avance de todos los equipos</h2><div class="row"><button class="btn gh sm" id="refreshAll">🔄 Actualizar desde la nube</button><button class="btn sm" id="dlGeneral">⬇️ Reporte general</button><button class="btn gh sm" id="expAll">📤 Respaldo completo</button><button class="btn gh sm" id="impAll">📥 Importar respaldo</button></div></div>
+  <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">📊 Avance de todos los equipos</h2><div class="row"><button class="btn gh sm" id="refreshAll">🔄 Actualizar desde la nube</button><a class="btn sm" href="#alumnos">🙋 Registros por alumno</a><button class="btn sm" id="dlGeneral">⬇️ Reporte general</button><button class="btn gh sm" id="expAll">📤 Respaldo completo</button><button class="btn gh sm" id="impAll">📥 Importar respaldo</button></div></div>
    <div style="overflow-x:auto" id="overview">${overviewTable()}</div></div>
   <div class="card"><h2>📏 Evaluar con rúbrica</h2>
    <div class="row" style="margin-bottom:8px">${S.config.teams.map(t=>`<button class="btn ${t.id===DOCT?'':'gh'} sm" data-doct="${t.id}">${esc(t.emoji+' '+t.name)}</button>`).join('')}</div>
