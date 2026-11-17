@@ -22,6 +22,15 @@ Liga: https://taniariveraanahuac-creator.github.io/CANVAS-INTRODUCCIO-A-LA-EMPRE
 4. Autoriza los permisos y copia la **URL de la aplicación web** (termina en `/exec`).
 5. Pega esa URL en `sync.json`: `{ "url": "https://script.google.com/macros/s/…/exec" }`.
 
+### ¿Qué pasa con lo que los alumnos ya capturaron?
+**No se borra nada.** Mientras no hay hoja conectada, cada avance vive en el navegador de cada alumno.
+Al conectar la hoja, la primera vez que cada alumno vuelve a abrir la página:
+1. Se guarda una **versión de respaldo** de su trabajo («Respaldo antes de sincronizar · Nombre»).
+2. Su trabajo se **combina** con el de sus compañeros: se suman integrantes, ideas, encuestas y justificaciones (no gana uno sobre otro).
+3. Después todo se sincroniza normal (si alguien borra una idea, queda borrada).
+
+Importar respaldos (.json) también combina sin borrar.
+
 ## Equipos y claves
 Cada equipo entra con su clave (la docente las entrega por separado), registra a sus integrantes
 (máximo 5) y ya tiene un caso asignado por defecto. Las claves se guardan cifradas (hash) en `index.html`.

@@ -1217,12 +1217,46 @@ async function initCloud(){
   const tmo=setTimeout(()=>toast('🌐 La nube tarda en responder; sigues trabajando y se guarda en este dispositivo.'),10000);
   CLOUD.subs.config=CLOUD.db.doc('config/main').onSnapshot(snap=>{
     if(!snap.metadata.fromCache) clearTimeout(tmo);
-    if(snap.exists){ const d=snap.data(); if(d&&d.config&&d.config.teams && !timers['config/main']){ if((d.config.updatedAt||0)>=(S.config.updatedAt||0)){ S.config=normalizeConfig(clone(d.config)); lsSet(LS,S); softRender('config'); } else if(CLOUD.writable){ cloudSet('config/main',()=>({config:S.config}),300); } } }
+    if(snap.exists){ const d=snap.data(); if(d&&d.config&&d.config.teams&&!snap.metadata.fromCache&&CLOUD.writable&&!lsGet('canvaslab-cfgmerged')){ lsSet('canvaslab-cfgmerged',1); const mc=mergeConfigMembers(d.config,S.config); if(mc.changed){ S.config=normalizeConfig(mc.c); S.config.updatedAt=Date.now(); lsSet(LS,S); cloudSet('config/main',()=>({config:S.config}),300); softRender('config'); return; } } if(d&&d.config&&d.config.teams && !timers['config/main']){ if((d.config.updatedAt||0)>=(S.config.updatedAt||0)){ S.config=normalizeConfig(clone(d.config)); lsSet(LS,S); softRender('config'); } else if(CLOUD.writable){ cloudSet('config/main',()=>({config:S.config}),300); } } }
     else if(!snap.metadata.fromCache && CLOUD.writable && (S.config.updatedAt||0)>0){ cloudSet('config/main',()=>({config:S.config}),300); }
   },e=>{clearTimeout(tmo);cloudErr(e)});
   if(ME.team) subscribeTeam(ME.team);
   softRender('init');
 }
+
+/* ---------- COMBINAR SIN BORRAR (primera sincronización e importaciones) ---------- */
+function mergeText(a,b){ a=String(a||'').trim(); b=String(b||'').trim(); if(!a) return b; if(!b||a===b) return a; if(a.includes(b)) return a; if(b.includes(a)) return b; return a+'\n\n'+b; }
+function mergeBlock(k,l,r){
+  if(!l) return clone(r); if(!r) return clone(l);
+  const N=(l.updatedAt||0)>=(r.updatedAt||0)?l:r, O=N===l?r:l; const m=clone(N);
+  if(/^b\d$/.test(k)){
+    const seen=new Set(), items=[];
+    [...(N.items||[]),...(O.items||[])].forEach(i=>{const key=i.id||('t:'+String(i.t||'').trim().toLowerCase());const tk='t:'+String(i.t||'').trim().toLowerCase();if(seen.has(key)||seen.has(tk))return;seen.add(key);seen.add(tk);items.push(clone(i));});
+    m.items=items; m.just=mergeText(N.just,O.just); m.owner=N.owner||O.owner||'';
+  } else if(k==='meta'){ m.roles=Object.assign({},O.roles||{},N.roles||{}); }
+  else if(k==='calc'){
+    const mf=(a,b)=>{const out=clone(a||[]);(b||[]).forEach((x,i)=>{if(!out[i]){out[i]=clone(x);return;}Object.keys(x).forEach(f=>{if((out[i][f]===''||out[i][f]==null)&&x[f]!==''&&x[f]!=null)out[i][f]=x[f];});});return out;};
+    m.rows=mf(N.rows,O.rows); m.fixed=mf(N.fixed,O.fixed); m.inv=mf(N.inv,O.inv); m.notes=mergeText(N.notes,O.notes);
+  } else if(k==='pattern'){
+    m.patterns=[...new Set([...(N.patterns||[]),...(O.patterns||[])])];
+    ['why','chesWhy','conclusion'].forEach(f=>m[f]=mergeText(N[f],O[f]));
+    m.chesNow=N.chesNow||O.chesNow||0; m.chesGoal=N.chesGoal||O.chesGoal||0;
+    m.coh=Object.assign({},O.coh||{},N.coh||{}); Object.keys(O.coh||{}).forEach(i=>{if(O.coh[i])m.coh[i]=true;});
+  } else if(k==='survey'){
+    if(!(m.questions&&m.questions.length)&&O.questions) m.questions=clone(O.questions);
+    if((O.manualN||0)>(m.manualN||0)){ m.manualN=O.manualN; m.manual=clone(O.manual||{}); }
+  } else if(k==='selfeval'){ m.levels=Object.assign({},O.levels||{},N.levels||{}); }
+  m.updatedAt=Math.max(l.updatedAt||0,r.updatedAt||0);
+  return m;
+}
+function mergeMembers(a,b){ const out=[...(a||[])]; (b||[]).forEach(n=>{ if(!out.some(x=>normName(x).toLowerCase()===normName(n).toLowerCase())) out.push(n); }); return out; }
+function mergeConfigMembers(base,other){
+  let changed=false; const c=clone(base);
+  (other.teams||[]).forEach(ot=>{ const t=c.teams.find(x=>x.id===ot.id); if(!t){ c.teams.push(clone(ot)); changed=true; return; }
+    const mm=mergeMembers(t.members,ot.members); if(mm.length!==(t.members||[]).length){ t.members=mm; changed=true; } });
+  return {c,changed};
+}
+
 function unsubscribeTeam(){ const s=CLOUD.teamSub; if(s){ s.fns.forEach(f=>{try{f()}catch(e){}}); CLOUD.teamSub=null; } }
 function subscribeTeam(tid){
   if(!CLOUD.on) return;
@@ -1231,11 +1265,15 @@ function subscribeTeam(tid){
   const fns=[]; let first=true;
   fns.push(CLOUD.db.collection(`teams/${tid}/blocks`).onSnapshot(qs=>{
     const t=T(tid); const seen=new Set();
+    const fm=first&&!qs.metadata.fromCache&&CLOUD.writable&&!lsGet('canvaslab-merged-'+tid);
+    if(fm&&Object.values(t.blocks).some(b=>(b.updatedAt||0)>0)){ try{ addReport(tid,'Respaldo antes de sincronizar'+(ME.name?' · '+ME.name:''),true); }catch(e){} }
     qs.docs.forEach(d=>{ seen.add(d.id); if(d.metadata.hasPendingWrites) return; const r=d.data(); const l=t.blocks[d.id];
+      if(fm&&l&&(l.updatedAt||0)>0){ const m=mergeBlock(d.id,l,r); if(JSON.stringify(m)!==JSON.stringify(r)){ m.updatedAt=Date.now(); t.blocks[d.id]=m; cloudSet(`teams/${tid}/blocks/${d.id}`,()=>T(tid).blocks[d.id],300); } else t.blocks[d.id]=clone(r); return; }
       if(!l||(r.updatedAt||0)>(l.updatedAt||0)){ if(timers[`teams/${tid}/blocks/${d.id}`]&&l) return; t.blocks[d.id]=clone(r); }
       else if((l.updatedAt||0)>(r.updatedAt||0)&&CLOUD.writable){ cloudSet(`teams/${tid}/blocks/${d.id}`,()=>T(tid).blocks[d.id],300); }
     });
     if(first&&!qs.metadata.fromCache&&CLOUD.writable){ Object.keys(t.blocks).forEach(k=>{ if(!seen.has(k)&&(t.blocks[k].updatedAt||0)>0) cloudSet(`teams/${tid}/blocks/${k}`,()=>T(tid).blocks[k],300); }); first=false; }
+    if(fm) lsSet('canvaslab-merged-'+tid,1);
     lsSet(LS,S); softRender('blocks');
   },e=>cloudErr(e)));
   fns.push(CLOUD.db.collection(`teams/${tid}/log`).orderBy('ts','desc').limit(80).onSnapshot(qs=>{
@@ -2242,7 +2280,7 @@ function vAlumnos(){
   const tot=rows.length, act=rows.filter(r=>r.s.ideas.length||r.s.surveys.length||r.s.logs.length).length;
   return `<div class="pagehead"><div><h1>🙋 Registros por alumno</h1><div class="muted">${teach?'Todos los alumnos inscritos, con lo que aportó cada uno.':'Lo que aportó cada integrante de tu equipo. Tú también apareces aquí.'}</div></div></div>
   ${howTo(teach?['Revisa quién ya participó y quién no.','Toca 👁️ Ver para el detalle de cada alumno.','Descarga el reporte individual con ⬇️.']:['Busca tu nombre (👤).','Toca 👁️ Ver para revisar tus aportaciones.','Descarga tu reporte individual con ⬇️.'])}
-  ${!CLOUD.on?`<div class="callout c-warn"><span class="ic">💾</span><div><b>Ojo:</b> el guardado compartido no está activado, así que aquí solo aparece lo que se trabajó <b>en esta computadora</b>. Para ver lo de todos los dispositivos hay que conectar la hoja de Google (sync.json).</div></div>`:''}
+  ${!CLOUD.on?`<div class="callout c-warn"><span class="ic">💾</span><div><b>Ojo:</b> el guardado compartido no está activado, así que aquí solo aparece lo que se trabajó <b>en esta computadora</b>. Para ver lo de todos los dispositivos hay que conectar la hoja de Google (sync.json). Mientras tanto: cada alumno entra a <b>📄 Reporte → 📤 Exportar respaldo</b> y se lo envía a la profesora, que lo carga en <b>🍎 Docente → 📥 Importar respaldo</b>. Se combina sin borrar nada.</div></div>`:''}
   <div class="row" style="margin-bottom:10px"><span class="tag">👥 ${tot} alumnos inscritos</span><span class="tag">✅ ${act} con aportaciones</span><span class="tag">⏳ ${tot-act} sin aportaciones todavía</span>${teach&&CLOUD.on?'<button class="btn gh sm" id="alRefresh">🔄 Actualizar desde la nube</button>':''}<button class="btn gh sm" id="alCsv">⬇️ Descargar lista (Excel/CSV)</button></div>
   ${groups.map(g=>{const rs=rows.filter(r=>r.tm.group===g.id);if(!rs.length)return '';return `<div class="card"><h2 style="margin-top:0">${esc(g.name||'Mi equipo')}</h2><div style="overflow-x:auto"><table class="altab"><tr><th>Alumno</th><th>Equipo · caso</th><th>Rol</th><th>Coordina</th><th>💡 Ideas</th><th>📊 Encuestas</th><th>🗒️ Movimientos</th><th>Última actividad</th><th></th></tr>
    ${rs.map((r,ix)=>{const me=sameName(r.m,ME.name||'');const none=!(r.s.ideas.length||r.s.surveys.length||r.s.logs.length);return `<tr class="${me?'me':''}"><td><b>${me?'👤 ':''}${esc(r.m)}</b></td><td>${esc(r.tm.emoji+' '+r.tm.name)}<br><small class="muted">${esc(CASES[caseIdOf(r.tm.id)].name)}</small></td><td><small>${esc(r.s.role||'—')}</small></td><td>${r.s.coord.map(b=>b.n).join(', ')||'—'}</td><td class="n">${r.s.ideas.length}</td><td class="n">${r.s.surveys.length}</td><td class="n">${r.s.logs.length}</td><td>${none?'<span class="tag" style="background:#fff4e6;color:#c2410c">Sin aportaciones</span>':fmtDT(r.s.last)}</td><td style="white-space:nowrap"><button class="btn gh sm" data-alv="${esc(r.tm.id)}|${esc(r.m)}">👁️ Ver</button> <button class="btn sm" data-ald="${esc(r.tm.id)}|${esc(r.m)}">⬇️ Reporte</button></td></tr>`}).join('')}
@@ -2406,13 +2444,13 @@ async function downloadFile(name,data,mime){
 }
 async function copyText(txt){ try{await navigator.clipboard.writeText(txt);toast('📋 Copiado');}catch(e){ modal(`<h2>Copiar</h2><textarea style="min-height:240px">${esc(txt)}</textarea><button class="btn gh" onclick="closeModal()" style="margin-top:8px">Cerrar</button>`,r=>{const t=r.querySelector('textarea');t.focus();t.select();}); } }
 function openImport(){
-  modal(`<h2>📥 Importar respaldo</h2><p class="muted">Elige el archivo .json exportado o pega su contenido. Se combina con lo actual: gana lo más reciente de cada bloque.</p><input type="file" id="mFile" accept=".json,application/json"><textarea id="mTxt" placeholder="…o pega aquí el contenido" style="margin-top:8px;min-height:120px"></textarea><div class="row" style="margin-top:8px"><button class="btn or" id="mOk">Importar</button><button class="btn gh" id="mNo">Cancelar</button></div>`,r=>{
+  modal(`<h2>📥 Importar respaldo</h2><p class="muted">Elige el archivo .json exportado o pega su contenido. Se combina con lo actual sin borrar nada: se suman las ideas, integrantes y respuestas de los dos.</p><input type="file" id="mFile" accept=".json,application/json"><textarea id="mTxt" placeholder="…o pega aquí el contenido" style="margin-top:8px;min-height:120px"></textarea><div class="row" style="margin-top:8px"><button class="btn or" id="mOk">Importar</button><button class="btn gh" id="mNo">Cancelar</button></div>`,r=>{
     r.querySelector('#mFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{r.querySelector('#mTxt').value=fr.result};fr.readAsText(f);};
     r.querySelector('#mNo').onclick=closeModal;
     r.querySelector('#mOk').onclick=()=>{try{const o=JSON.parse(r.querySelector('#mTxt').value);
-      const mergeTeam=(tid,d)=>{const t=T(tid);Object.entries(d.blocks||{}).forEach(([k,v])=>{const l=t.blocks[k];if(!l||(v.updatedAt||0)>(l.updatedAt||0)){t.blocks[k]=v;touchBlock(tid,k);}});const lid=new Set(t.log.map(x=>x.id));(d.log||[]).forEach(x=>{if(!lid.has(x.id)){t.log.push({...x,synced:false});}});t.log.sort((a,b)=>b.ts-a.ts);const rid=new Set(t.reports.map(x=>x.id));(d.reports||[]).forEach(x=>{if(!rid.has(x.id)){const n={...x,synced:false};t.reports.push(n);if(CLOUD.on&&CLOUD.writable)CLOUD.db.collection(`teams/${tid}/reports`).doc(n.id).set(n).then(()=>n.synced=true).catch(()=>{});}});t.reports.sort((a,b)=>b.ts-a.ts);};
-      if(o.kind==='canvaslab-team'){ if(o.team&&!teamById(o.tid)){S.config.teams.push(normalizeConfig({teams:[o.team],groups:[]}).teams[0]);saveConfig();} mergeTeam(o.tid,o.data); }
-      else if(o.kind==='canvaslab-all'){ if(isTeacher()&&o.data.config&&(o.data.config.updatedAt||0)>(S.config.updatedAt||0)){S.config=normalizeConfig(o.data.config);saveConfig();} Object.entries(o.data.teams||{}).forEach(([tid,d])=>mergeTeam(tid,d)); if(isTeacher()) Object.entries(o.data.grades||{}).forEach(([tid,g])=>{if(!S.grades[tid]||(g.updatedAt||0)>(S.grades[tid].updatedAt||0)){S.grades[tid]=g;saveGrade(tid);}}); }
+      const mergeTeam=(tid,d)=>{const t=T(tid);Object.entries(d.blocks||{}).forEach(([k,v])=>{const l=t.blocks[k];const m=mergeBlock(k,l,v);if(!l||JSON.stringify(m)!==JSON.stringify(l)){t.blocks[k]=m;touchBlock(tid,k);}});const lid=new Set(t.log.map(x=>x.id));(d.log||[]).forEach(x=>{if(!lid.has(x.id)){t.log.push({...x,synced:false});}});t.log.sort((a,b)=>b.ts-a.ts);const rid=new Set(t.reports.map(x=>x.id));(d.reports||[]).forEach(x=>{if(!rid.has(x.id)){const n={...x,synced:false};t.reports.push(n);if(CLOUD.on&&CLOUD.writable)CLOUD.db.collection(`teams/${tid}/reports`).doc(n.id).set(n).then(()=>n.synced=true).catch(()=>{});}});t.reports.sort((a,b)=>b.ts-a.ts);};
+      if(o.kind==='canvaslab-team'){ if(o.team&&!teamById(o.tid)){S.config.teams.push(normalizeConfig({teams:[o.team],groups:[]}).teams[0]);saveConfig();} else if(o.team){const tm=teamById(o.tid);const mm=mergeMembers(tm.members,o.team.members);if(mm.length!==tm.members.length){tm.members=mm;saveConfig();}} mergeTeam(o.tid,o.data); }
+      else if(o.kind==='canvaslab-all'){ if(o.data.config){const mc=mergeConfigMembers(S.config,o.data.config);if(mc.changed){S.config=normalizeConfig(mc.c);saveConfig();}} Object.entries(o.data.teams||{}).forEach(([tid,d])=>mergeTeam(tid,d)); if(isTeacher()) Object.entries(o.data.grades||{}).forEach(([tid,g])=>{if(!S.grades[tid]||(g.updatedAt||0)>(S.grades[tid].updatedAt||0)){S.grades[tid]=g;saveGrade(tid);}}); }
       else throw new Error('formato');
       persistLocal(); closeModal(); toast('📥 Respaldo importado'); render();
     }catch(e){toast('❌ Ese contenido no es un respaldo válido');}};
